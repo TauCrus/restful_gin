@@ -1,6 +1,6 @@
 package main
 
-import(
+import (
 	db "restful_gin/database"
 )
 
@@ -9,4 +9,3 @@ func main() {
 	router := initRouter()
 	router.Run(":8080")
 }
-

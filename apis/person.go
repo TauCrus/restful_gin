@@ -1,38 +1,42 @@
 package apis
 
 import (
-	"net/http"
-	"log"
 	"fmt"
+	"log"
+	"net/http"
+	"restful_gin/models"
 	"strconv"
+
 	"github.com/gin-gonic/gin"
-	. "restful_gin/models"
 )
 
-func IndexApi(c *gin.Context){
+// IndexAPI 首页
+func IndexAPI(c *gin.Context) {
 	c.String(http.StatusOK, "It works")
 }
-// 新增的接口
-func AddPersonApi(c *gin.Context){
+
+// AddPersonAPI 新增的接口
+func AddPersonAPI(c *gin.Context) {
 	firstName := c.Request.FormValue("first_name")
 	lastName := c.Request.FormValue("last_name")
 
-	person := Person{FirstName:firstName, LastName: lastName}
-	ra_rows, err:= person.AddPerson()
+	person := models.Person{FirstName: firstName, LastName: lastName}
+	raRows, err := person.AddPerson()
 	if nil != err {
 		log.Fatalln(err)
 	}
 
-	msg := fmt.Sprintf("insert successful %d", ra_rows)
-	
+	msg := fmt.Sprintf("insert successful %d", raRows)
+
 	c.JSON(http.StatusOK, gin.H{
-		"msg":msg,
+		"msg": msg,
 	})
 }
-//查询所有的接口
-func GetPersonsApi(c *gin.Context){
-	person := Person{}
-	persons,err := person.GetPersons()
+
+//GetPersonsAPI 查询所有的接口
+func GetPersonsAPI(c *gin.Context) {
+	person := models.Person{}
+	persons, err := person.GetPersons()
 	if nil != err {
 		log.Fatalln(err)
 	}
@@ -41,10 +45,11 @@ func GetPersonsApi(c *gin.Context){
 		"persons": persons,
 	})
 }
-//查询单条记录的接口
-func GetPersonApi(c *gin.Context){
+
+//GetPersonAPI 查询单条记录的接口
+func GetPersonAPI(c *gin.Context) {
 	id := c.Param("id")
-	p1 := Person{}
+	p1 := models.Person{}
 	p2, err := p1.GetPerson(id)
 	if nil != err {
 		log.Fatalln(err)
@@ -54,40 +59,42 @@ func GetPersonApi(c *gin.Context){
 		"person": p2,
 	})
 }
-//更新接口
-func UpdatePersonApi(c *gin.Context){
+
+//UpdatePersonAPI 更新接口
+func UpdatePersonAPI(c *gin.Context) {
 	cid := c.Param("id")
 	id, err := strconv.Atoi(cid)
 	if nil != err {
 		log.Fatalln(err)
 	}
-	person := Person{Id: id}
+	person := models.Person{ID: id}
 	err = c.Bind(&person)
 	if nil != err {
 		log.Fatalln(err)
 	}
 
-	ra_rows, err := person.UpdatePerson()
-	
-	msg := fmt.Sprintf("Update person %d successful %d", person.Id, ra_rows)
+	raRows, err := person.UpdatePerson()
+
+	msg := fmt.Sprintf("Update person %d successful %d", person.ID, raRows)
 	c.JSON(http.StatusOK, gin.H{
 		"msg": msg,
 	})
 }
-//删除接口
-func DeletePersonApi(c *gin.Context){
+
+//DeletePersonAPI 删除接口
+func DeletePersonAPI(c *gin.Context) {
 	cid := c.Param("id")
 	id, err := strconv.Atoi(cid)
-	if nil != err{
+	if nil != err {
 		log.Fatalln(err)
-	} 
+	}
 
-	person := Person{Id: id}
-	ra_rows, err := person.DeletePerson()
-	
-	msg := fmt.Sprintf("Delete person %d successful %d", id, ra_rows)
-	
+	person := models.Person{ID: id}
+	raRows, err := person.DeletePerson()
+
+	msg := fmt.Sprintf("Delete person %d successful %d", id, raRows)
+
 	c.JSON(http.StatusOK, gin.H{
-		"msg":msg,
+		"msg": msg,
 	})
 }
