@@ -1,6 +1,7 @@
 package apis
 
 import (
+	"log"
 	"net/http"
 	"restful_gin/models"
 
@@ -35,7 +36,7 @@ func UserInfoAPI(c *gin.Context) {
 	roles = []string{"admin"}
 	permissions = []string{"/index", "/table", "/forms/base", "/forms/edit",
 		"/user/password", "/about", "/sys/user/list", "/sys/review/list",
-		"/count/order/list"}
+		"/count/order/list", "/user/service/list"}
 
 	var userinfo = UserInfo{ID: "12138", Name: "spring", Roles: roles}
 
@@ -119,10 +120,7 @@ func SysUserQueryAPI(c *gin.Context) {
 	user := models.User{}
 	users, err := user.GetSysUsers()
 	if nil != err {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"error":   err,
-		})
+		log.Fatalln(err)
 	}
 
 	result := UserQueryResult{Data: users}

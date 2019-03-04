@@ -16,8 +16,8 @@ type Order struct {
 	EndDate      string  `json:"end_date"`
 }
 
-//GetOrders 查询所有订单
-func (o *Order) GetOrders() (orders []Order, err error) {
+//QueryOrders 查询所有订单
+func (o *Order) QueryOrders() (orders []Order, err error) {
 
 	orders = make([]Order, 0)
 

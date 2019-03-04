@@ -15,31 +15,36 @@ func initRouter() *gin.Engine {
 	/**
 	* 测试用例
 	 */
-	router.GET("/", IndexAPI)
+	{
+		router.GET("/", IndexAPI)
 
-	router.POST("/person", AddPersonAPI)
+		router.POST("/person", AddPersonAPI)
 
-	router.GET("/person", GetPersonsAPI)
+		router.GET("/person", GetPersonsAPI)
 
-	router.GET("/person/:id", GetPersonAPI)
+		router.GET("/person/:id", GetPersonAPI)
 
-	router.PUT("/person/:id", UpdatePersonAPI)
+		router.PUT("/person/:id", UpdatePersonAPI)
 
-	router.DELETE("/person/:id", DeletePersonAPI)
+		router.DELETE("/person/:id", DeletePersonAPI)
+
+	}
 
 	/**
 	*用户接口
 	 */
-	router.POST("/api/user/login", UserLoginAPI)
+	user := router.Group("api/user")
+	{
+		user.POST("/login", UserLoginAPI)
 
-	router.POST("/api/user/logout", UserLogoutAPI)
+		user.POST("/logout", UserLogoutAPI)
 
-	router.POST("/api/user/register", UserRegisterAPI)
+		user.POST("/register", UserRegisterAPI)
 
-	router.GET("/api/user/info", UserInfoAPI)
+		user.GET("/info", UserInfoAPI)
 
-	router.POST("/api/user/changePassword", UserChangePwdAPI)
-
+		user.POST("/changePassword", UserChangePwdAPI)
+	}
 	/**
 	*系统用户接口
 	 */
@@ -53,7 +58,16 @@ func initRouter() *gin.Engine {
 	/**
 	* 订单
 	 */
-	router.GET("/api/count/order", GetOrdersAPI)
+	router.GET("/api/count/order", QueryOrdersAPI)
+
+	// 服务路由
+	{
+		router.POST("/api/user/service", AddServiceAPI)
+		router.GET("/api/user/service", GetServicesAPI)
+		// router.GET("/api/user/service/:id", GetServiceAPI)
+		router.PUT("/api/user/service", ModifyServiceAPI)
+		router.DELETE("/api/user/service", DropServiceAPI)
+	}
 
 	return router
 }

@@ -1,6 +1,7 @@
 package apis
 
 import (
+	"log"
 	"net/http"
 	"restful_gin/models"
 
@@ -16,10 +17,7 @@ type ReviewResult struct {
 func SysReviewsQueryAPI(c *gin.Context) {
 	reviews, err := new(models.System).SysReviewsQuery()
 	if nil != err {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"error":   err,
-		})
+		log.Fatalln(err)
 	}
 
 	result := ReviewResult{Data: reviews}

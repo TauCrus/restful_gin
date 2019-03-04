@@ -1,6 +1,7 @@
 package apis
 
 import (
+	"log"
 	"net/http"
 	"restful_gin/models"
 
@@ -12,15 +13,12 @@ type OrderResult struct {
 	Data []models.Order `json:"data"`
 }
 
-//GetOrdersAPI 获取订单
-func GetOrdersAPI(c *gin.Context) {
+//QueryOrdersAPI 获取订单
+func QueryOrdersAPI(c *gin.Context) {
 	order := models.Order{}
-	orders, err := order.GetOrders()
+	orders, err := order.QueryOrders()
 	if nil != err {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"error":   err,
-		})
+		log.Fatalln(err)
 	}
 
 	result := OrderResult{Data: orders}
@@ -29,4 +27,5 @@ func GetOrdersAPI(c *gin.Context) {
 		"success": true,
 		"result":  result,
 	})
+
 }
