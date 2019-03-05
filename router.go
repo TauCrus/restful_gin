@@ -69,5 +69,10 @@ func initRouter() *gin.Engine {
 		router.DELETE("/api/user/service", DropServiceAPI)
 	}
 
+	//产品路由
+	{
+		router.GET("/api/product/product", GetProductsAPI)
+	}
+
 	return router
 }
