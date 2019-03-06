@@ -2,8 +2,8 @@ package models
 
 import db "restful_gin/database"
 
-// User 用户
-type User struct {
+// AdminUser 系统用户
+type AdminUser struct {
 	ID       string `json:"id"`
 	RealName string `json:"realname"`
 	UserName string `json:"username"`
@@ -11,10 +11,10 @@ type User struct {
 	Phone    string `json:"phone"`
 }
 
-// GetSysUsers 查询所有用户
-func (u *User) GetSysUsers() (users []User, err error) {
+// GetAdminUsers 查询所有用户
+func (u *User) GetAdminUsers() (users []AdminUser, err error) {
 
-	users = make([]User, 0)
+	users = make([]AdminUser, 0)
 
 	rows, err := db.SqlDB.Query(`
 		SELECT id ,realname,username,email,phone
@@ -26,8 +26,53 @@ func (u *User) GetSysUsers() (users []User, err error) {
 	defer rows.Close()
 
 	for rows.Next() {
-		var user User
+		var user AdminUser
 		rows.Scan(&user.ID, &user.RealName, &user.UserName, &user.Email, &user.Phone)
+
+		users = append(users, user)
+	}
+	if err = rows.Err(); nil != err {
+		return
+	}
+	return
+}
+
+// User 用户
+type User struct {
+	UserID     string `json:"userid"`
+	ImageURL   string `json:"image_url"`
+	Birthday   string `json:"birthday"`
+	IsVIP      int    `json:"is_vip"`
+	VIPEndDate string `json:"vip_end_date"`
+	Version    string `json:"version"`
+	NickName   string `json:"nickname"`
+	RegistTime string `json:"regist_time"`
+}
+
+// GetUsers 查询所有用户
+func (u *User) GetUsers() (users []User, err error) {
+
+	users = make([]User, 0)
+
+	rows, err := db.SqlDB.Query(`		
+		SELECT a.userid,
+			IFNULL(a.image_url,''),
+			IFNULL(a.birthday,''),
+			a.is_vip,
+			IFNULL(a.vip_end_date,''),
+			a.version,
+			b.nickname,b.registtime	
+		FROM t_user_new a
+		LEFT JOIN t_user_base b ON a.userid = b.userid
+	`)
+	if nil != err {
+		return
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var user User
+		rows.Scan(&user.UserID, &user.ImageURL, &user.Birthday, &user.IsVIP, &user.VIPEndDate, &user.Version, &user.NickName, &user.RegistTime)
 
 		users = append(users, user)
 	}

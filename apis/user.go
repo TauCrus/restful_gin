@@ -36,7 +36,10 @@ func UserInfoAPI(c *gin.Context) {
 	roles = []string{"admin"}
 	permissions = []string{"/index", "/table", "/forms/base", "/forms/edit",
 		"/user/password", "/about", "/sys/user/list", "/sys/review/list",
-		"/count/order/list", "/user/service/list"}
+		"/count/order/list", "/count/regist/list",
+		"/user/manage/list", "/user/service/list", "/user/feedback/list",
+		"/coupon/manage/list", "/coupon/activity/list", "/coupon/record/list",
+		"/product/manage/list", "/product/price/list", "/product/package/list", "/product/recommend/list"}
 
 	var userinfo = UserInfo{ID: "12138", Name: "spring", Roles: roles}
 
@@ -110,20 +113,40 @@ func UserChangePwdAPI(c *gin.Context) {
 	})
 }
 
-// UserQueryResult 用户查询结果
-type UserQueryResult struct {
-	Data []models.User `json:"data"`
+// AdminUserResult 用户查询结果
+type AdminUserResult struct {
+	Data []models.AdminUser `json:"data"`
 }
 
-// SysUserQueryAPI 用户查询接口
-func SysUserQueryAPI(c *gin.Context) {
-	user := models.User{}
-	users, err := user.GetSysUsers()
+// GetGetAdminUsersAPI 后台用户查询接口
+func GetGetAdminUsersAPI(c *gin.Context) {
+	u := models.User{}
+	users, err := u.GetAdminUsers()
 	if nil != err {
 		log.Fatalln(err)
 	}
 
-	result := UserQueryResult{Data: users}
+	result := AdminUserResult{Data: users}
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"result":  result,
+	})
+}
+
+// GetUserResult 用户查询结果
+type GetUserResult struct {
+	Data []models.User `json:"data"`
+}
+
+// GetUsersAPI 用户查询接口
+func GetUsersAPI(c *gin.Context) {
+	u := models.User{}
+	users, err := u.GetUsers()
+	if nil != err {
+		log.Fatalln(err)
+	}
+
+	result := GetUserResult{Data: users}
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"result":  result,

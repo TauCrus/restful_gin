@@ -1,7 +1,6 @@
 package models
 
 import (
-	"log"
 	db "restful_gin/database"
 	"restful_gin/utils"
 )
@@ -77,7 +76,7 @@ func (s *Service) GetServices(userid, productClass string) (services []Service, 
 
 	querySQL = utils.SetSQLFormat(`{0} ORDER BY a.create_time DESC`, querySQL)
 
-	log.Println("querySQL:", querySQL)
+	// log.Println("querySQL:", querySQL)
 
 	rows, err := db.SqlDB.Query(querySQL)
 	defer rows.Close()

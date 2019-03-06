@@ -46,9 +46,9 @@ func initRouter() *gin.Engine {
 		user.POST("/changePassword", UserChangePwdAPI)
 	}
 	/**
-	*系统用户接口
+	*管理用户接口
 	 */
-	router.GET("/api/sys/user/query", SysUserQueryAPI)
+	router.GET("/api/sys/user/query", GetGetAdminUsersAPI)
 
 	/**
 	*系统设置接口
@@ -60,13 +60,19 @@ func initRouter() *gin.Engine {
 	 */
 	router.GET("/api/count/order", QueryOrdersAPI)
 
-	// 服务路由
 	{
+		// 用户管理路由
+		router.GET("/api/user/manage", GetUsersAPI)
+
+		// 用户服务路由
 		router.POST("/api/user/service", AddServiceAPI)
 		router.GET("/api/user/service", GetServicesAPI)
-		// router.GET("/api/user/service/:id", GetServiceAPI)
 		router.PUT("/api/user/service", ModifyServiceAPI)
 		router.DELETE("/api/user/service", DropServiceAPI)
+
+		// 用户反馈路由
+		router.GET("/api/user/feedback", GetFeedbacksAPI)
+		router.DELETE("/api/user/feedback", DropFeedbackAPI)
 	}
 
 	//产品路由

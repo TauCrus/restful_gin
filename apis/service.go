@@ -21,10 +21,18 @@ func AddServiceAPI(c *gin.Context) {
 	if nil != err {
 		log.Fatalln(err)
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"result":  gin.H{"id": raRows},
-	})
+	// log.Fatalln("raRows:", raRows)
+	if raRows == -1 {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"result":  "duplicate add",
+		})
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"success": true,
+			"result":  gin.H{"id": raRows},
+		})
+	}
 }
 
 // GetServicesResult 服务查询结果

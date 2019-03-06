@@ -19,8 +19,12 @@ func init() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
+
 	err = SqlDB.Ping()
 	if err != nil {
 		log.Fatal(err.Error())
 	}
+
+	SqlDB.SetMaxIdleConns(4)
+	SqlDB.SetMaxOpenConns(10)
 }
