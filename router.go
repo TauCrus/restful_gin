@@ -80,5 +80,21 @@ func initRouter() *gin.Engine {
 		router.GET("/api/product/product", GetProductsAPI)
 	}
 
+	// 内容路由
+	{
+		// 文案组
+		cw := router.Group("api/content/copywriter")
+		cw.GET("/banner", GetBannersAPI)
+		cw.GET("/startpage", GetStartPagesAPI)
+		cw.GET("/searchrecommend", GetSearchRecommendsAPI)
+		cw.GET("/marketinglabel", GetMarketingLabelsAPI)
+
+		// 首页组
+		hp := router.Group("api/content/homepage")
+		hp.GET("/column", GetColumnsAPI)
+		hp.GET("/productcolumn", GetProductColumnsAPI)
+
+	}
+
 	return router
 }

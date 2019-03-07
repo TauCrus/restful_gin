@@ -39,7 +39,14 @@ func UserInfoAPI(c *gin.Context) {
 		"/count/order/list", "/count/regist/list",
 		"/user/manage/list", "/user/service/list", "/user/feedback/list",
 		"/coupon/manage/list", "/coupon/activity/list", "/coupon/record/list",
-		"/product/manage/list", "/product/price/list", "/product/package/list", "/product/recommend/list"}
+		"/product/manage/list", "/product/price/list", "/product/package/list", "/product/recommend/list",
+		"/content/copywriter",
+		"/content/copywriter/banner/list",
+		"/content/copywriter/startpage/list",
+		"/content/copywriter/searchrecommend/list",
+		"/content/copywriter/marketinglabel/list",
+		"/content/homepage",
+		"/content/homepage/column/list"}
 
 	var userinfo = UserInfo{ID: "12138", Name: "spring", Roles: roles}
 
