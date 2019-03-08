@@ -24,7 +24,7 @@ type Banner struct {
 }
 
 // GetBanners 查询轮播图
-func (c *Copywriter) GetBanners() (banners []Banner, err error) {
+func (c *Copywriter) GetBanners(isHp int) (banners []Banner, err error) {
 	banners = make([]Banner, 0)
 
 	querySQL := utils.SetSQLFormat(`
@@ -39,8 +39,14 @@ func (c *Copywriter) GetBanners() (banners []Banner, err error) {
 			bp.place
 		FROM gpxj_app.t_banner b
 		LEFT JOIN gpxj_app.t_banner_place bp ON b.place_id = bp.id
-		WHERE b.place_id BETWEEN 1 AND 5
+		WHERE 1
 	`)
+
+	if 1 == isHp {
+		querySQL = utils.SetSQLFormat(`{0} AND  b.place_id = 6`, querySQL)
+	} else {
+		querySQL = utils.SetSQLFormat(`{0} AND  b.place_id BETWEEN 1 AND 5`, querySQL)
+	}
 
 	querySQL = utils.SetSQLFormat(`{0} ORDER BY b.id DESC`, querySQL)
 

@@ -93,6 +93,13 @@ func initRouter() *gin.Engine {
 		hp := router.Group("api/content/homepage")
 		hp.GET("/column", GetColumnsAPI)
 		hp.GET("/productcolumn", GetProductColumnsAPI)
+		hp.GET("/spcolumn", GetSPColumnsAPI)
+		hp.GET("/articlecolumn", GetArticleColumnsAPI)
+		hp.GET("/adcolumn", GetAdColumnsAPI)
+		hp.GET("/shortcutmenu", GetShortCutMenusAPI)
+		hp.GET("/productclassify", GetProductClassifysAPI)
+		hp.GET("/suspendad", GetSuspendAdsAPI)
+		hp.GET("/popup", GetPopupsAPI)
 
 	}
 

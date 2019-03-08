@@ -17,7 +17,7 @@ type GetBannersResult struct {
 func GetBannersAPI(c *gin.Context) {
 	cw := models.Copywriter{}
 
-	banners, err := cw.GetBanners()
+	banners, err := cw.GetBanners(0)
 	if nil != err {
 		log.Fatalln(err)
 	}
