@@ -78,6 +78,7 @@ func initRouter() *gin.Engine {
 	//产品路由
 	{
 		router.GET("/api/product/product", GetProductsAPI)
+		router.GET("/api/product/productlist", GetProductListAPI)
 	}
 
 	// 内容路由
