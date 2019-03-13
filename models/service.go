@@ -27,7 +27,7 @@ func (s *Service) AddService() (id int64, err error) {
 		`, s.UserID, s.ProductClass)
 
 	var cnt int
-	err = db.SqlDB.QueryRow(querySQL).Scan(&cnt)
+	err = db.SQLDB.QueryRow(querySQL).Scan(&cnt)
 	if nil != err {
 		return
 	}
@@ -35,7 +35,7 @@ func (s *Service) AddService() (id int64, err error) {
 		return
 	}
 
-	rs, err := db.SqlDB.Exec(`
+	rs, err := db.SQLDB.Exec(`
 		INSERT INTO 
 		gpxj_app.t_service(userid,product_id,product_class,enable,start_date,end_date,create_time) 
 		VALUES
@@ -78,7 +78,7 @@ func (s *Service) GetServices(userid, productClass string) (services []Service, 
 
 	// log.Println("querySQL:", querySQL)
 
-	rows, err := db.SqlDB.Query(querySQL)
+	rows, err := db.SQLDB.Query(querySQL)
 	defer rows.Close()
 
 	if nil != err {
@@ -103,7 +103,7 @@ func (s *Service) GetServices(userid, productClass string) (services []Service, 
 // ModifyService 修改服务
 func (s *Service) ModifyService() (id int64, err error) {
 
-	stmt, err := db.SqlDB.Prepare(`		
+	stmt, err := db.SQLDB.Prepare(`		
 		UPDATE gpxj_app.t_service
 		SET product_class= ?,
 			start_date = ?,
@@ -129,7 +129,7 @@ func (s *Service) ModifyService() (id int64, err error) {
 // DropService 删除服务
 func (s *Service) DropService() (id int64, err error) {
 
-	rs, err := db.SqlDB.Exec(`DELETE FROM gpxj_app.t_service WHERE id = ?`, s.ID)
+	rs, err := db.SQLDB.Exec(`DELETE FROM gpxj_app.t_service WHERE id = ?`, s.ID)
 	if nil != err {
 		return
 	}

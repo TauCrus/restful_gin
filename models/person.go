@@ -14,7 +14,7 @@ type Person struct {
 
 //AddPerson 新增
 func (p *Person) AddPerson() (id int64, err error) {
-	rs, err := db.SqlDB.Exec("INSERT INTO person(first_name,last_name) VALUES(?,?)", p.FirstName, p.LastName)
+	rs, err := db.SQLDB.Exec("INSERT INTO person(first_name,last_name) VALUES(?,?)", p.FirstName, p.LastName)
 	if nil != err {
 		return
 	}
@@ -30,7 +30,7 @@ func (p *Person) AddPerson() (id int64, err error) {
 func (p *Person) GetPersons() (persons []Person, err error) {
 	persons = make([]Person, 0)
 
-	rows, err := db.SqlDB.Query("SELECT id, first_name, last_name FROM person")
+	rows, err := db.SQLDB.Query("SELECT id, first_name, last_name FROM person")
 	defer rows.Close()
 
 	if nil != err {
@@ -51,7 +51,7 @@ func (p *Person) GetPersons() (persons []Person, err error) {
 // GetPerson 查询单条
 func (p *Person) GetPerson(id string) (person Person, err error) {
 
-	err = db.SqlDB.QueryRow("SELECT id, first_name, last_name FROM person WHERE id =?", id).Scan(&person.ID, &person.FirstName, &person.LastName)
+	err = db.SQLDB.QueryRow("SELECT id, first_name, last_name FROM person WHERE id =?", id).Scan(&person.ID, &person.FirstName, &person.LastName)
 	if nil != err {
 		return
 	}
@@ -62,7 +62,7 @@ func (p *Person) GetPerson(id string) (person Person, err error) {
 //UpdatePerson 更新
 func (p *Person) UpdatePerson() (id int64, err error) {
 
-	stmt, err := db.SqlDB.Prepare("UPDATE person SET first_name=?,last_name=? WHERE id=?")
+	stmt, err := db.SQLDB.Prepare("UPDATE person SET first_name=?,last_name=? WHERE id=?")
 	if nil != err {
 		return
 	}
@@ -81,7 +81,7 @@ func (p *Person) UpdatePerson() (id int64, err error) {
 
 //DeletePerson 删除
 func (p *Person) DeletePerson() (id int64, err error) {
-	rs, err := db.SqlDB.Exec("DELETE FROM person WHERE id=?", p.ID)
+	rs, err := db.SQLDB.Exec("DELETE FROM person WHERE id=?", p.ID)
 	if nil != err {
 		return
 	}

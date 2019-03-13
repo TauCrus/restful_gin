@@ -21,7 +21,7 @@ func (o *Order) QueryOrders() (orders []Order, err error) {
 
 	orders = make([]Order, 0)
 
-	rows, err := db.SqlDB.Query(`
+	rows, err := db.SQLDB.Query(`
 	SELECT order_id, pay_way, userid,
 			product_id,product_class,
 			quantity,total_fee/100, 

@@ -39,7 +39,7 @@ func (h *Homepage) GetColumns() (columns []Column, err error) {
 
 	log.Println("querySQL:", querySQL)
 
-	rows, err := db.SqlDB.Query(querySQL)
+	rows, err := db.SQLDB.Query(querySQL)
 	defer rows.Close()
 
 	if nil != err {
@@ -101,7 +101,7 @@ func (h *Homepage) GetProductColumns() (pcs []ProductColumn, err error) {
 
 	log.Println("querySQL:", querySQL)
 
-	rows, err := db.SqlDB.Query(querySQL)
+	rows, err := db.SQLDB.Query(querySQL)
 	defer rows.Close()
 
 	if nil != err {
@@ -164,7 +164,7 @@ func (h *Homepage) GetSPColumns() (spcs []SPColumn, err error) {
 
 	log.Println("querySQL:", querySQL)
 
-	rows, err := db.SqlDB.Query(querySQL)
+	rows, err := db.SQLDB.Query(querySQL)
 	defer rows.Close()
 
 	if nil != err {
@@ -221,7 +221,7 @@ func (h *Homepage) GetArticleColumns() (acs []ArticleColumn, err error) {
 
 	log.Println("querySQL:", querySQL)
 
-	rows, err := db.SqlDB.Query(querySQL)
+	rows, err := db.SQLDB.Query(querySQL)
 	defer rows.Close()
 
 	if nil != err {
@@ -270,7 +270,7 @@ func (h *Homepage) GetShortCutMenus() (scms []ShortCutMenu, err error) {
 
 	log.Println("querySQL:", querySQL)
 
-	rows, err := db.SqlDB.Query(querySQL)
+	rows, err := db.SQLDB.Query(querySQL)
 	defer rows.Close()
 
 	if nil != err {
@@ -322,7 +322,7 @@ func (h *Homepage) GetProductClassifys() (pcs []ProductClassify, err error) {
 
 	log.Println("querySQL:", querySQL)
 
-	rows, err := db.SqlDB.Query(querySQL)
+	rows, err := db.SQLDB.Query(querySQL)
 	defer rows.Close()
 
 	if nil != err {
@@ -378,7 +378,7 @@ func (h *Homepage) GetActivityMarketings(mType int) (ams []ActivityMarketing, er
 
 	log.Println("querySQL:", querySQL)
 
-	rows, err := db.SqlDB.Query(querySQL)
+	rows, err := db.SQLDB.Query(querySQL)
 	defer rows.Close()
 
 	if nil != err {

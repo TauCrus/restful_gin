@@ -16,7 +16,7 @@ func (u *User) GetAdminUsers() (users []AdminUser, err error) {
 
 	users = make([]AdminUser, 0)
 
-	rows, err := db.SqlDB.Query(`
+	rows, err := db.SQLDB.Query(`
 		SELECT id ,realname,username,email,phone
 		FROM gpxj_app.t_admin_user
 	`)
@@ -54,7 +54,7 @@ func (u *User) GetUsers() (users []User, err error) {
 
 	users = make([]User, 0)
 
-	rows, err := db.SqlDB.Query(`		
+	rows, err := db.SQLDB.Query(`		
 		SELECT a.userid,
 			IFNULL(a.image_url,''),
 			IFNULL(a.birthday,''),

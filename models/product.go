@@ -16,7 +16,7 @@ type Product struct {
 func (p *Product) GetProducts() (products []Product, err error) {
 	products = make([]Product, 0)
 
-	rows, err := db.SqlDB.Query(`
+	rows, err := db.SQLDB.Query(`
 		SELECT product_class,product_name
 		FROM gpxj_app.t_product
 		WHERE is_package <> 1
@@ -102,7 +102,7 @@ func (p *Product) GetProductList() (productList []ProductList, err error) {
 
 	log.Println("querySQL:", querySQL)
 
-	rows, err := db.SqlDB.Query(querySQL)
+	rows, err := db.SQLDB.Query(querySQL)
 	defer rows.Close()
 
 	if nil != err {
@@ -124,5 +124,132 @@ func (p *Product) GetProductList() (productList []ProductList, err error) {
 		return
 	}
 
+	return
+}
+
+// ProductPrice 产品价格
+type ProductPrice struct {
+	ProductID     int     `json:"product_id"`
+	ProductClass  string  `json:"product_class"`
+	ProductName   string  `json:"product_name"`
+	Price         float64 `json:"price"`
+	DiscountPrice float64 `json:"discount_price"`
+	VipPrice      float64 `json:"vip_price"`
+	Period        string  `json:"period"`
+	ServiceDay    int     `json:"service_day"`
+	ServiceMonth  int     `json:"service_month"`
+	Alias         string  `json:"alias"`
+	Sort          int     `json:"sort"`
+	IsShow        int     `json:"is_show"`
+	IsListShow    int     `json:"is_list_show"`
+	IsEnable      int     `json:"is_enable"`
+	ApplePayPID   string  `json:"apple_pay_pid"`
+	IsConsume     int     `json:"is_consume"`
+}
+
+// GetProductPrices 查询产品价格
+func (p *Product) GetProductPrices() (ppList []ProductPrice, err error) {
+
+	ppList = make([]ProductPrice, 0)
+
+	querySQL := utils.SetSQLFormat(`
+	SELECT 
+		product_id,product_class,product_name,
+		price*0.01,discount_price*0.01,vip_price*0.01,
+		period,service_day,service_month,
+		IFNULL(alias,""),sort,
+		is_show,is_list_show,is_enable,
+		IFNULL(apple_pay_pid,""),is_consume
+	FROM t_product_price
+	WHERE 1
+	`)
+
+	querySQL = utils.SetSQLFormat(`{0} ORDER BY create_time DESC`, querySQL)
+
+	log.Println("querySQL:", querySQL)
+
+	rows, err := db.SQLDB.Query(querySQL)
+	defer rows.Close()
+
+	if nil != err {
+		return
+	}
+
+	for rows.Next() {
+		var pp ProductPrice
+		rows.Scan(&pp.ProductID, &pp.ProductClass, &pp.ProductName,
+			&pp.Price, &pp.DiscountPrice, &pp.VipPrice,
+			&pp.Period, &pp.ServiceDay, &pp.ServiceMonth,
+			&pp.Alias, &pp.Sort,
+			&pp.IsShow, &pp.IsListShow, &pp.IsEnable,
+			&pp.ApplePayPID, &pp.IsConsume)
+
+		ppList = append(ppList, pp)
+	}
+
+	if err = rows.Err(); nil != err {
+		return
+	}
+
+	return
+}
+
+// ProductRecommend 推荐产品
+type ProductRecommend struct {
+	ID              int    `json:"id"`
+	RecommendType   string `json:"recommend_type"`
+	CNRecommendType string `json:"cn_recommend_type"`
+	ProductClass    string `json:"product_class"`
+	ProductName     string `json:"product_name"`
+	IsList          int    `json:"is_list"`
+	Sort            int    `json:"sort"`
+}
+
+// GetProductRecommends 查询推荐产品
+func (p *Product) GetProductRecommends() (prList []ProductRecommend, err error) {
+
+	prList = make([]ProductRecommend, 0)
+
+	querySQL := utils.SetSQLFormat(`
+		SELECT
+			prs.id,prs.recommend_type,
+			CASE recommend_type
+				WHEN 'is_top' THEN '实验室头牌'
+				WHEN 'is_new' THEN '新品推荐'
+				WHEN 'is_like' THEN '猜你喜欢'
+				WHEN 'is_wntj' THEN '为你推荐'
+			END AS cn_recommend_type,
+			prs.product_class,
+			p.product_name,
+			prs.is_list,
+			prs.sort
+		FROM t_product_recommend_setting prs
+		LEFT JOIN t_product p ON prs.product_class = p.product_class
+		WHERE 1
+	`)
+
+	querySQL = utils.SetSQLFormat(`{0} ORDER BY prs.id  DESC`, querySQL)
+
+	log.Println("querySQL:", querySQL)
+
+	rows, err := db.SQLDB.Query(querySQL)
+	defer rows.Close()
+
+	if nil != err {
+		return
+	}
+
+	for rows.Next() {
+		var pr ProductRecommend
+		rows.Scan(&pr.ID, &pr.RecommendType, &pr.CNRecommendType,
+			&pr.ProductClass, &pr.ProductName,
+			&pr.IsList, &pr.Sort)
+
+		prList = append(prList, pr)
+	}
+
+	if err = rows.Err(); nil != err {
+		return
+	}
 	return
 }

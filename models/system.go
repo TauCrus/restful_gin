@@ -19,7 +19,7 @@ func (s *System) SysReviewsQuery() (data []Review, err error) {
 
 	data = make([]Review, 0)
 
-	rows, err := db.SqlDB.Query(`
+	rows, err := db.SQLDB.Query(`
 		SELECT id,channel,version,in_review,memo
 		FROM gpxj_app.t_release_review
 	`)

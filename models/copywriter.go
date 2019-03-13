@@ -52,7 +52,7 @@ func (c *Copywriter) GetBanners(isHp int) (banners []Banner, err error) {
 
 	log.Println("querySQL:", querySQL)
 
-	rows, err := db.SqlDB.Query(querySQL)
+	rows, err := db.SQLDB.Query(querySQL)
 	defer rows.Close()
 
 	if nil != err {
@@ -100,7 +100,7 @@ func (c *Copywriter) GetStartPages() (startpages []StartPage, err error) {
 
 	log.Println("querySQL:", querySQL)
 
-	rows, err := db.SqlDB.Query(querySQL)
+	rows, err := db.SQLDB.Query(querySQL)
 	defer rows.Close()
 
 	if nil != err {
@@ -150,7 +150,7 @@ func (c *Copywriter) GetSearchRecommends() (srs []SearchRecommend, err error) {
 
 	log.Println("querySQL:", querySQL)
 
-	rows, err := db.SqlDB.Query(querySQL)
+	rows, err := db.SQLDB.Query(querySQL)
 	defer rows.Close()
 
 	if nil != err {
@@ -193,7 +193,7 @@ func (c *Copywriter) GetMarketingLabels() (labels []MarketingLabel, err error) {
 
 	log.Println("querySQL:", querySQL)
 
-	rows, err := db.SqlDB.Query(querySQL)
+	rows, err := db.SQLDB.Query(querySQL)
 	defer rows.Close()
 
 	if nil != err {

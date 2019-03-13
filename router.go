@@ -79,6 +79,15 @@ func initRouter() *gin.Engine {
 	{
 		router.GET("/api/product/product", GetProductsAPI)
 		router.GET("/api/product/productlist", GetProductListAPI)
+		router.GET("/api/product/price", GetProductPricesAPI)
+		router.GET("/api/product/recommend", GetProductRecommendsAPI)
+	}
+
+	// 优惠券路由
+	{
+		router.GET("/api/coupon/manage", GetCouponsAPI)
+		router.GET("/api/coupon/record", GetCouponRecordAPI)
+		router.GET("/api/coupon/activity", GetCouponActivityAPI)
 	}
 
 	// 内容路由

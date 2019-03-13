@@ -37,7 +37,7 @@ func (f *Feedback) GetFeedbacks(userid, email string) (feedbacks []Feedback, err
 
 	log.Println("querySQL:", querySQL)
 
-	rows, err := db.SqlDB.Query(querySQL)
+	rows, err := db.SQLDB.Query(querySQL)
 	defer rows.Close()
 
 	if nil != err {
@@ -60,7 +60,7 @@ func (f *Feedback) GetFeedbacks(userid, email string) (feedbacks []Feedback, err
 // DropFeedback 删除服务
 func (f *Feedback) DropFeedback() (id int64, err error) {
 
-	rs, err := db.SqlDB.Exec(`DELETE FROM gpxj_app.t_feedback WHERE id = ?`, f.ID)
+	rs, err := db.SQLDB.Exec(`DELETE FROM gpxj_app.t_feedback WHERE id = ?`, f.ID)
 	if nil != err {
 		return
 	}
