@@ -24,7 +24,7 @@ type Banner struct {
 }
 
 // GetBanners 查询轮播图
-func (c *Copywriter) GetBanners(isHp int) (banners []Banner, err error) {
+func (c *Copywriter) GetBanners(isHp int, title, activityName, status string) (banners []Banner, err error) {
 	banners = make([]Banner, 0)
 
 	querySQL := utils.SetSQLFormat(`
@@ -46,6 +46,24 @@ func (c *Copywriter) GetBanners(isHp int) (banners []Banner, err error) {
 		querySQL = utils.SetSQLFormat(`{0} AND  b.place_id = 6`, querySQL)
 	} else {
 		querySQL = utils.SetSQLFormat(`{0} AND  b.place_id BETWEEN 1 AND 5`, querySQL)
+	}
+
+	if "" != title {
+		querySQL = utils.SetSQLFormat(`{0} AND b.title like '%{1}%'`, querySQL, title)
+	}
+
+	if "" != activityName {
+		querySQL = utils.SetSQLFormat(`{0} AND b.activity_name like '%{1}%'`, querySQL, activityName)
+	}
+
+	if "" != status {
+		if "1" == status {
+			querySQL = utils.SetSQLFormat(`{0} AND b.is_show = 1`, querySQL)
+		} else if "2" == status {
+			querySQL = utils.SetSQLFormat(`{0} AND b.is_show = 0`, querySQL)
+		} else if "3" == status {
+			querySQL = utils.SetSQLFormat(`{0} AND b.in_review = 1`, querySQL)
+		}
 	}
 
 	querySQL = utils.SetSQLFormat(`{0} ORDER BY b.id DESC`, querySQL)

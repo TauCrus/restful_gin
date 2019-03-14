@@ -96,8 +96,12 @@ func GetArticleColumnsAPI(c *gin.Context) {
 
 // GetAdColumnsAPI 查询首页广告栏目接口
 func GetAdColumnsAPI(c *gin.Context) {
+	title := c.Request.FormValue("title")
+	activityName := c.Request.FormValue("activity_name")
+	status := c.Request.FormValue("status")
+
 	cw := models.Copywriter{}
-	banners, err := cw.GetBanners(1)
+	banners, err := cw.GetBanners(1, title, activityName, status)
 	if nil != err {
 		log.Fatalln(err)
 	}
