@@ -7,5 +7,5 @@ import (
 func main() {
 	defer db.SQLDB.Close()
 	router := initRouter()
-	router.Run(":8080")
+	router.Run(":9420")
 }
