@@ -95,6 +95,9 @@ func initRouter() *gin.Engine {
 		// 文案组
 		cw := router.Group("api/content/copywriter")
 		cw.GET("/banner", GetBannersAPI)
+		cw.POST("/banner", AddBannerAPI)
+		cw.PUT("/banner", ModifyBannerAPI)
+		cw.GET("/bannerplace", GetBannerPlacesAPI)
 		cw.GET("/startpage", GetStartPagesAPI)
 		cw.GET("/searchrecommend", GetSearchRecommendsAPI)
 		cw.GET("/marketinglabel", GetMarketingLabelsAPI)

@@ -20,7 +20,12 @@ type Banner struct {
 	IsShow       int    `json:"is_show"`
 	InReview     int    `json:"in_review"`
 	ActivityName string `json:"activity_name"`
+	PlaceID      int    `json:"place_id"`
 	Place        string `json:"place"`
+	ShareTitle   string `json:"share_title"`
+	ShareIconURL string `json:"share_icon_url"`
+	ShareURL     string `json:"share_url"`
+	ShareDesc    string `json:"share_desc"`
 }
 
 // GetBanners 查询轮播图
@@ -36,6 +41,7 @@ func (c *Copywriter) GetBanners(isHp int, title, activityName, status string) (b
 			b.is_show ,
 			b.in_review ,
 			b.activity_name ,
+			b.place_id,
 			bp.place
 		FROM gpxj_app.t_banner b
 		LEFT JOIN gpxj_app.t_banner_place bp ON b.place_id = bp.id
@@ -80,12 +86,126 @@ func (c *Copywriter) GetBanners(isHp int, title, activityName, status string) (b
 	for rows.Next() {
 		var banner Banner
 		rows.Scan(&banner.ID, &banner.Title, &banner.ImamgeURL, &banner.JumpURL, &banner.Uptime,
-			&banner.IsShow, &banner.InReview, &banner.ActivityName, &banner.Place)
+			&banner.IsShow, &banner.InReview, &banner.ActivityName, &banner.PlaceID, &banner.Place)
 
 		banners = append(banners, banner)
 	}
 
 	if err = rows.Err(); nil != err {
+		return
+	}
+
+	return
+}
+
+// BannerPlace 轮播图位置
+type BannerPlace struct {
+	ID    int    `json:"id"`
+	Place string `json:"place"`
+}
+
+// GetBannerPlaces 查询轮播图位置
+func (c *Copywriter) GetBannerPlaces() (bps []BannerPlace, err error) {
+	bps = make([]BannerPlace, 0)
+
+	querySQL := utils.SetSQLFormat(`
+		SELECT id, place
+		FROM t_banner_place 
+		WHERE id IN (1,2,3,4,5)
+	`)
+
+	log.Println("querySQL:", querySQL)
+
+	rows, err := db.SQLDB.Query(querySQL)
+	defer rows.Close()
+
+	if nil != err {
+		return
+	}
+
+	for rows.Next() {
+		var bp BannerPlace
+		rows.Scan(&bp.ID, &bp.Place)
+
+		bps = append(bps, bp)
+	}
+
+	if err = rows.Err(); nil != err {
+		return
+	}
+	return
+}
+
+// AddBanner 新增轮播图
+func (c *Copywriter) AddBanner(banner Banner) (id int64, err error) {
+
+	insertSQL := utils.SetSQLFormat(`
+	INSERT INTO gpxj_app.t_banner (
+		column_id,title,image_url,jump_url,
+		share_title,share_desc,share_icon_url,share_url,
+		place_id,uptime,is_show,activity_name,in_review) 
+	  VALUES
+		(
+		  '0','{0}','{1}','{2}',
+		'{3}','{4}','{5}','{6}',
+		  '{7}','{8}','{9}','{10}','{11}')
+		  `, banner.Title, banner.ImamgeURL, banner.JumpURL,
+		banner.ShareTitle, banner.ShareIconURL, banner.ShareURL, banner.ShareDesc,
+		banner.PlaceID, banner.Uptime, banner.IsShow, banner.ActivityName, banner.InReview)
+
+	log.Println("insertSQL:", insertSQL)
+
+	rs, err := db.SQLDB.Exec(insertSQL)
+	if nil != err {
+		return
+	}
+
+	id, err = rs.LastInsertId()
+	if nil != err {
+		return
+	}
+
+	return
+}
+
+// ModifyBanner 修改轮播图
+func (c *Copywriter) ModifyBanner(banner Banner) (id int64, err error) {
+	updateSQL := utils.SetSQLFormat(`
+	UPDATE 
+		gpxj_app.t_banner 
+	SET
+		title = '{0}',
+		image_url = '{1}',
+		jump_url = '{2}',
+		share_title = '{3}',
+		share_desc = '{4}',
+		share_icon_url = '{5}',
+		share_url = '{6}',
+		place_id = '{7}',
+		uptime = '{8}',
+		is_show = '{9}',
+		activity_name = '{10}',
+		in_review = '{11}'
+	WHERE id = '{12}' ;
+	`, banner.Title, banner.ImamgeURL, banner.JumpURL,
+		banner.ShareTitle, banner.ShareDesc, banner.ShareIconURL, banner.ShareURL,
+		banner.PlaceID, banner.Uptime, banner.IsShow, banner.ActivityName, banner.InReview,
+		banner.ID)
+
+	log.Println("updateSQL:", updateSQL)
+
+	stmt, err := db.SQLDB.Prepare(updateSQL)
+	if nil != err {
+		return
+	}
+
+	rs, err := stmt.Exec()
+	if nil != err {
+		return
+	}
+
+	id, err = rs.RowsAffected()
+	if nil != err {
 		return
 	}
 
