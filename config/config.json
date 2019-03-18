@@ -1,0 +1,6 @@
+{
+    "TestDSN": "wallace:wallace@gpxj115566@tcp(debug.gupiaoxianji.com:3309)/gpxj_app",
+    "DSN": "gpxj:xianji@tcp(10.116.46.52:3306)/gpxj_app?timeout=3s&readTimeout=3s&writeTimeout=3s",
+    "Port": 9420,
+    "Apns": false
+}

@@ -3,6 +3,7 @@ package database
 import (
 	sql "database/sql"
 	"log"
+	"restful_gin/config"
 
 	// mysql驱动
 	_ "github.com/go-sql-driver/mysql"
@@ -12,22 +13,29 @@ import (
 var SQLDB *sql.DB
 
 func init() {
-	var err error
-	//本地数据库
-	// SQLDB, err = sql.Open("mysql", "root:123456@tcp(127.0.0.1:3306)/blog01?parseTime=true")
-	//测试数据库
-	SQLDB, err = sql.Open("mysql", "wallace:wallace@gpxj115566@tcp(debug.gupiaoxianji.com:3309)/gpxj_app?parseTime=true")
-	if err != nil {
-		// log.Fatal(err.Error())
+	if config.Apns {
+		SQLDB = NewMysql(config.DSN, 4, 10)
+	} else {
+		SQLDB = NewMysql(config.TestDSN, 4, 10)
+	}
+}
+
+// NewMysql 新建数据库连接
+func NewMysql(dataSourceName string, maxIdleConns, maxOpenConns int) *sql.DB {
+	log.Println("Data Source Name:", dataSourceName)
+
+	db, err := sql.Open("mysql", dataSourceName)
+	if nil != err {
 		log.Println(err)
 	}
 
-	err = SQLDB.Ping()
-	if err != nil {
-		// log.Fatal(err.Error())
+	err = db.Ping()
+	if nil != err {
 		log.Println(err)
 	}
 
-	SQLDB.SetMaxIdleConns(4)
-	SQLDB.SetMaxOpenConns(10)
+	db.SetMaxIdleConns(maxIdleConns)
+	db.SetMaxOpenConns(maxOpenConns)
+
+	return db
 }

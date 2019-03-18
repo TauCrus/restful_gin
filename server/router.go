@@ -97,8 +97,14 @@ func initRouter() *gin.Engine {
 		cw.GET("/banner", GetBannersAPI)
 		cw.POST("/banner", AddBannerAPI)
 		cw.PUT("/banner", ModifyBannerAPI)
+		cw.DELETE("/banner", DropBannerAPI)
 		cw.GET("/bannerplace", GetBannerPlacesAPI)
+
 		cw.GET("/startpage", GetStartPagesAPI)
+		cw.POST("/startpage", AddStartPageAPI)
+		cw.PUT("/startpage", ModifyStartPageAPI)
+		cw.DELETE("/startpage", DropStartPageAPI)
+
 		cw.GET("/searchrecommend", GetSearchRecommendsAPI)
 		cw.GET("/marketinglabel", GetMarketingLabelsAPI)
 

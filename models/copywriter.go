@@ -4,6 +4,8 @@ import (
 	"log"
 	db "restful_gin/database"
 	"restful_gin/utils"
+
+	"github.com/golang/glog"
 )
 
 // Copywriter 文案
@@ -37,12 +39,16 @@ func (c *Copywriter) GetBanners(isHp int, title, activityName, status string) (b
 			b.title,
 			b.image_url ,
 			b.jump_url ,
-			b.uptime,
+			DATE_FORMAT(uptime,'%Y-%m-%d %H:%i:%s'),
 			b.is_show ,
 			b.in_review ,
 			b.activity_name ,
 			b.place_id,
-			bp.place
+			bp.place,
+			IFNULL(share_title,''),
+			IFNULL(share_icon_url,''),
+			IFNULL(share_url,''),
+			IFNULL(share_desc,'')
 		FROM gpxj_app.t_banner b
 		LEFT JOIN gpxj_app.t_banner_place bp ON b.place_id = bp.id
 		WHERE 1
@@ -74,7 +80,7 @@ func (c *Copywriter) GetBanners(isHp int, title, activityName, status string) (b
 
 	querySQL = utils.SetSQLFormat(`{0} ORDER BY b.id DESC`, querySQL)
 
-	log.Println("querySQL:", querySQL)
+	glog.Info("querySQL:", querySQL)
 
 	rows, err := db.SQLDB.Query(querySQL)
 	defer rows.Close()
@@ -86,7 +92,8 @@ func (c *Copywriter) GetBanners(isHp int, title, activityName, status string) (b
 	for rows.Next() {
 		var banner Banner
 		rows.Scan(&banner.ID, &banner.Title, &banner.ImamgeURL, &banner.JumpURL, &banner.Uptime,
-			&banner.IsShow, &banner.InReview, &banner.ActivityName, &banner.PlaceID, &banner.Place)
+			&banner.IsShow, &banner.InReview, &banner.ActivityName, &banner.PlaceID, &banner.Place,
+			&banner.ShareTitle, &banner.ShareIconURL, &banner.ShareURL, &banner.ShareDesc)
 
 		banners = append(banners, banner)
 	}
@@ -114,7 +121,7 @@ func (c *Copywriter) GetBannerPlaces() (bps []BannerPlace, err error) {
 		WHERE id IN (1,2,3,4,5)
 	`)
 
-	log.Println("querySQL:", querySQL)
+	glog.Info("querySQL:", querySQL)
 
 	rows, err := db.SQLDB.Query(querySQL)
 	defer rows.Close()
@@ -153,7 +160,7 @@ func (c *Copywriter) AddBanner(banner Banner) (id int64, err error) {
 		banner.ShareTitle, banner.ShareIconURL, banner.ShareURL, banner.ShareDesc,
 		banner.PlaceID, banner.Uptime, banner.IsShow, banner.ActivityName, banner.InReview)
 
-	log.Println("insertSQL:", insertSQL)
+	glog.Info("insertSQL:", insertSQL)
 
 	rs, err := db.SQLDB.Exec(insertSQL)
 	if nil != err {
@@ -171,28 +178,27 @@ func (c *Copywriter) AddBanner(banner Banner) (id int64, err error) {
 // ModifyBanner 修改轮播图
 func (c *Copywriter) ModifyBanner(banner Banner) (id int64, err error) {
 	updateSQL := utils.SetSQLFormat(`
-	UPDATE 
-		gpxj_app.t_banner 
-	SET
-		title = '{0}',
-		image_url = '{1}',
-		jump_url = '{2}',
-		share_title = '{3}',
-		share_desc = '{4}',
-		share_icon_url = '{5}',
-		share_url = '{6}',
-		place_id = '{7}',
-		uptime = '{8}',
-		is_show = '{9}',
-		activity_name = '{10}',
-		in_review = '{11}'
-	WHERE id = '{12}' ;
-	`, banner.Title, banner.ImamgeURL, banner.JumpURL,
+		UPDATE 
+			gpxj_app.t_banner 
+		SET
+			title = '{1}',
+			image_url = '{2}',
+			jump_url = '{3}',
+			share_title = '{4}',
+			share_desc = '{5}',
+			share_icon_url = '{6}',
+			share_url = '{7}',
+			place_id = '{8}',
+			uptime = '{9}',
+			is_show = '{10}',
+			activity_name = '{11}',
+			in_review = '{12}'
+		WHERE id = '{0}' ;
+		`, banner.ID, banner.Title, banner.ImamgeURL, banner.JumpURL,
 		banner.ShareTitle, banner.ShareDesc, banner.ShareIconURL, banner.ShareURL,
-		banner.PlaceID, banner.Uptime, banner.IsShow, banner.ActivityName, banner.InReview,
-		banner.ID)
+		banner.PlaceID, banner.Uptime, banner.IsShow, banner.ActivityName, banner.InReview)
 
-	log.Println("updateSQL:", updateSQL)
+	glog.Info("updateSQL:", updateSQL)
 
 	stmt, err := db.SQLDB.Prepare(updateSQL)
 	if nil != err {
@@ -212,31 +218,71 @@ func (c *Copywriter) ModifyBanner(banner Banner) (id int64, err error) {
 	return
 }
 
+// DropBanner 删除轮播图
+func (c *Copywriter) DropBanner(banner Banner) (id int64, err error) {
+
+	deleteSQL := utils.SetSQLFormat(`DELETE FROM gpxj_app.t_banner WHERE id ='{0}'`, banner.ID)
+	glog.Info("deleteSQL:", deleteSQL)
+
+	rs, err := db.SQLDB.Exec(deleteSQL)
+	if nil != err {
+		return
+	}
+	id, err = rs.RowsAffected()
+	if nil != err {
+		return
+	}
+	return
+}
+
 // StartPage 启动页
 type StartPage struct {
-	ID        int    `json:"id"`
-	Title     string `json:"title"`
-	ImamgeURL string `json:"image_url"`
-	JumpURL   string `json:"jump_url"`
-	IsShow    int    `json:"is_show"`
-	StartTime string `json:"start_time"`
-	EndTime   string `json:"end_time"`
+	ID           int    `json:"id"`
+	Title        string `json:"title"`
+	ImamgeURL    string `json:"image_url"`
+	JumpURL      string `json:"jump_url"`
+	IsShow       int    `json:"is_show"`
+	StartTime    string `json:"start_time"`
+	EndTime      string `json:"end_time"`
+	ShareTitle   string `json:"share_title"`
+	ShareIconURL string `json:"share_icon_url"`
+	ShareURL     string `json:"share_url"`
+	ShareDesc    string `json:"share_desc"`
 }
 
 // GetStartPages 查询启动页
-func (c *Copywriter) GetStartPages() (startpages []StartPage, err error) {
+func (c *Copywriter) GetStartPages(title, status string) (startpages []StartPage, err error) {
 	startpages = make([]StartPage, 0)
 
 	querySQL := utils.SetSQLFormat(`
-		SELECT id,title,image_url,jump_url,
-			is_show,start_time,end_time 
+		SELECT id,
+			title,
+			image_url,
+			jump_url,
+			is_show,
+			IFNULL(share_title,''),
+			IFNULL(share_icon_url,''),
+			IFNULL(share_url,''),
+			IFNULL(share_desc,''),
+			DATE_FORMAT(start_time,'%Y-%m-%d %H:%i:%s'),
+			DATE_FORMAT(end_time,'%Y-%m-%d %H:%i:%s')
 		FROM gpxj_app.t_start_page 
 		WHERE 1
 	`)
 
+	if "" != title {
+		querySQL = utils.SetSQLFormat(`{0} AND title like '%{1}%'`, querySQL, title)
+	}
+	if "" != status {
+		if "1" == status {
+			querySQL = utils.SetSQLFormat(`{0} AND is_show = 1`, querySQL)
+		} else if "2" == status {
+			querySQL = utils.SetSQLFormat(`{0} AND is_show = 0`, querySQL)
+		}
+	}
 	querySQL = utils.SetSQLFormat(`{0} ORDER BY id DESC`, querySQL)
 
-	log.Println("querySQL:", querySQL)
+	glog.Info("querySQL:", querySQL)
 
 	rows, err := db.SQLDB.Query(querySQL)
 	defer rows.Close()
@@ -247,8 +293,9 @@ func (c *Copywriter) GetStartPages() (startpages []StartPage, err error) {
 
 	for rows.Next() {
 		var startpage StartPage
-		rows.Scan(&startpage.ID, &startpage.Title, &startpage.ImamgeURL, &startpage.JumpURL,
-			&startpage.IsShow, &startpage.StartTime, &startpage.EndTime)
+		rows.Scan(&startpage.ID, &startpage.Title, &startpage.ImamgeURL, &startpage.JumpURL, &startpage.IsShow,
+			&startpage.ShareTitle, &startpage.ShareIconURL, &startpage.ShareURL, &startpage.ShareDesc,
+			&startpage.StartTime, &startpage.EndTime)
 
 		startpages = append(startpages, startpage)
 	}
@@ -257,6 +304,94 @@ func (c *Copywriter) GetStartPages() (startpages []StartPage, err error) {
 		return
 	}
 
+	return
+}
+
+// AddStartPage 新增启动页
+func (c *Copywriter) AddStartPage(startpage StartPage) (id int64, err error) {
+	insertSQL := utils.SetSQLFormat(`
+		INSERT INTO gpxj_app.t_start_page (
+			title,image_url,jump_url,is_show,
+			share_title,share_icon_url,share_url,share_desc,
+			start_time,end_time) 
+		VALUES
+			(
+			'{0}','{1}','{2}','{3}',
+			'{4}','{5}','{6}','{7}',
+			'{8}','{9}');
+		`, startpage.Title, startpage.ImamgeURL, startpage.JumpURL, startpage.IsShow,
+		startpage.ShareTitle, startpage.ShareIconURL, startpage.ShareURL, startpage.ShareDesc,
+		startpage.StartTime, startpage.EndTime)
+
+	glog.Info("insertSQL:", insertSQL)
+
+	rs, err := db.SQLDB.Exec(insertSQL)
+	if nil != err {
+		return
+	}
+
+	id, err = rs.LastInsertId()
+	if nil != err {
+		return
+	}
+	return
+}
+
+// ModifyStartPage 修改启动页
+func (c *Copywriter) ModifyStartPage(startpage StartPage) (id int64, err error) {
+	updateSQL := utils.SetSQLFormat(`
+		UPDATE 
+			gpxj_app.t_start_page 
+		SET
+			title = '{1}',
+			image_url = '{2}',
+			jump_url = '{3}',
+			is_show = '{4}',
+			share_title = '{5}',
+			share_desc = '{6}',
+			share_icon_url = '{7}',
+			share_url = '{8}',
+			start_time = '{9}',
+			end_time = '{10}'
+		WHERE id = '{0}';  
+		`, startpage.ID,
+		startpage.Title, startpage.ImamgeURL, startpage.JumpURL, startpage.IsShow,
+		startpage.ShareTitle, startpage.ShareIconURL, startpage.ShareURL, startpage.ShareDesc,
+		startpage.StartTime, startpage.EndTime)
+
+	glog.Info("updateSQL:", updateSQL)
+
+	stmt, err := db.SQLDB.Prepare(updateSQL)
+	if nil != err {
+		return
+	}
+
+	rs, err := stmt.Exec()
+	if nil != err {
+		return
+	}
+
+	id, err = rs.RowsAffected()
+	if nil != err {
+		return
+	}
+
+	return
+}
+
+// DropStartPage 删除启动页
+func (c *Copywriter) DropStartPage(startpage StartPage) (id int64, err error) {
+	deleteSQL := utils.SetSQLFormat(`DELETE FROM gpxj_app.t_start_page WHERE id ='{0}'`, startpage.ID)
+	glog.Info("deleteSQL:", deleteSQL)
+
+	rs, err := db.SQLDB.Exec(deleteSQL)
+	if nil != err {
+		return
+	}
+	id, err = rs.RowsAffected()
+	if nil != err {
+		return
+	}
 	return
 }
 

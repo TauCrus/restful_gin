@@ -7,6 +7,7 @@ import (
 	"restful_gin/models"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang/glog"
 )
 
 // GetBannersResult 轮播图结果
@@ -22,7 +23,6 @@ func GetBannersAPI(c *gin.Context) {
 	status := c.Request.FormValue("status")
 
 	cw := models.Copywriter{}
-
 	banners, err := cw.GetBanners(0, title, activityName, status)
 	if nil != err {
 		log.Fatalln(err)
@@ -47,7 +47,7 @@ func GetBannerPlacesAPI(c *gin.Context) {
 
 	bps, err := cw.GetBannerPlaces()
 	if nil != err {
-		log.Fatalln(err)
+		glog.Error(err)
 	}
 
 	result := GetBannerPlaceResult{Data: bps}
@@ -62,11 +62,11 @@ func AddBannerAPI(c *gin.Context) {
 	banner := models.Banner{}
 	err := c.Bind(&banner)
 	if nil != err {
-		log.Fatalln(err)
+		glog.Error(err)
 	}
 	raRows, err := new(models.Copywriter).AddBanner(banner)
 	if nil != err {
-		log.Fatalln(err)
+		glog.Error(err)
 	}
 
 	if raRows > 0 {
@@ -87,16 +87,48 @@ func ModifyBannerAPI(c *gin.Context) {
 	banner := models.Banner{}
 	err := c.Bind(&banner)
 	if nil != err {
-		log.Fatalln(err)
+		glog.Error(err)
 	}
 
 	raRows, err := new(models.Copywriter).ModifyBanner(banner)
-	msg := fmt.Sprintf("Update Banner %d successful %d", banner.ID, raRows)
+	if nil != err {
+		glog.Error(err)
+	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"result":  msg,
-	})
+	msg := fmt.Sprintf("Update Banner %d successful %d", banner.ID, raRows)
+	if raRows > 0 {
+		c.JSON(http.StatusOK, gin.H{
+			"success": true,
+			"result":  msg,
+		})
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"result":  "error modify",
+		})
+	}
+}
+
+// DropBannerAPI 删除轮播图接口
+func DropBannerAPI(c *gin.Context) {
+	banner := models.Banner{}
+	err := c.Bind(&banner)
+	if nil != err {
+		glog.Error(err)
+	}
+	raRows, err := new(models.Copywriter).DropBanner(banner)
+	if raRows > 0 {
+		msg := fmt.Sprintf("Delete Banner %d successful %d", banner.ID, raRows)
+		c.JSON(http.StatusOK, gin.H{
+			"success": true,
+			"result":  msg,
+		})
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"result":  "error delete",
+		})
+	}
 }
 
 // GetStartPagesResult 启动页结果
@@ -106,9 +138,11 @@ type GetStartPagesResult struct {
 
 // GetStartPagesAPI 查询启动页接口
 func GetStartPagesAPI(c *gin.Context) {
-	cw := models.Copywriter{}
+	title := c.Request.FormValue("title")
+	status := c.Request.FormValue("status")
 
-	startpages, err := cw.GetStartPages()
+	cw := models.Copywriter{}
+	startpages, err := cw.GetStartPages(title, status)
 	if nil != err {
 		log.Fatalln(err)
 	}
@@ -119,6 +153,78 @@ func GetStartPagesAPI(c *gin.Context) {
 		"success": true,
 		"result":  result,
 	})
+}
+
+// AddStartPageAPI 新增启动页接口
+func AddStartPageAPI(c *gin.Context) {
+	startpage := models.StartPage{}
+	err := c.Bind(&startpage)
+	if nil != err {
+		glog.Error(err)
+	}
+	raRows, err := new(models.Copywriter).AddStartPage(startpage)
+	if nil != err {
+		glog.Error(err)
+	}
+
+	if raRows > 0 {
+		c.JSON(http.StatusOK, gin.H{
+			"success": true,
+			"result":  gin.H{"id": raRows},
+		})
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"result":  "error add",
+		})
+	}
+}
+
+// ModifyStartPageAPI 修改启动页接口
+func ModifyStartPageAPI(c *gin.Context) {
+	startpage := models.StartPage{}
+	err := c.Bind(&startpage)
+	if nil != err {
+		glog.Error(err)
+	}
+	raRows, err := new(models.Copywriter).ModifyStartPage(startpage)
+	if nil != err {
+		glog.Error(err)
+	}
+	msg := fmt.Sprintf("Update StartPage %d successful %d", startpage.ID, raRows)
+	if raRows > 0 {
+		c.JSON(http.StatusOK, gin.H{
+			"success": true,
+			"result":  msg,
+		})
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"result":  "error modify",
+		})
+	}
+}
+
+// DropStartPageAPI 删除启动页接口
+func DropStartPageAPI(c *gin.Context) {
+	startpage := models.StartPage{}
+	err := c.Bind(&startpage)
+	if nil != err {
+		glog.Error(err)
+	}
+	raRows, err := new(models.Copywriter).DropStartPage(startpage)
+	if raRows > 0 {
+		msg := fmt.Sprintf("Delete StartPage %d successful %d", startpage.ID, raRows)
+		c.JSON(http.StatusOK, gin.H{
+			"success": true,
+			"result":  msg,
+		})
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"result":  "error delete",
+		})
+	}
 }
 
 // GetSearchRecommendsResult 搜索推荐结果
