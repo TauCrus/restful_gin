@@ -404,21 +404,44 @@ type SearchRecommend struct {
 	JumpURL       string `json:"jump_url"`
 	RecommendType string `json:"recommend_type"`
 	IsShow        int    `json:"is_show"`
+	Sort          int    `json:"sort"`
+	ShareTitle    string `json:"share_title"`
+	ShareIconURL  string `json:"share_icon_url"`
+	ShareURL      string `json:"share_url"`
+	ShareDesc     string `json:"share_desc"`
 }
 
 // GetSearchRecommends 查询搜索推荐
-func (c *Copywriter) GetSearchRecommends() (srs []SearchRecommend, err error) {
+func (c *Copywriter) GetSearchRecommends(recommendType, status string) (srs []SearchRecommend, err error) {
 	srs = make([]SearchRecommend, 0)
 
 	querySQL := utils.SetSQLFormat(`
 		 SELECT id,
-		 	IFNULL(stock_name,""),IFNULL(stock_code,""),
- 			IFNULL(activity_name,""),IFNULL(jump_url,""),
-		 	recommend_type,is_show
+			 IFNULL(stock_name,""),
+			 IFNULL(stock_code,""),
+			 IFNULL(activity_name,""),
+			 IFNULL(jump_url,""),
+			 recommend_type,
+			 is_show,
+			 IFNULL(sort,0),
+			 IFNULL(share_title,''),
+			 IFNULL(share_icon_url,''),
+			 IFNULL(share_url,''),
+			 IFNULL(share_desc,'')
  		FROM gpxj_app.t_search_recommend
  		WHERE 1
 	`)
+	if "" != recommendType {
+		querySQL = utils.SetSQLFormat(`{0} AND recommend_type = '{1}'`, querySQL, recommendType)
+	}
 
+	if "" != status {
+		if "1" == status {
+			querySQL = utils.SetSQLFormat(`{0} AND is_show = 1`, querySQL)
+		} else if "2" == status {
+			querySQL = utils.SetSQLFormat(`{0} AND is_show = 0`, querySQL)
+		}
+	}
 	querySQL = utils.SetSQLFormat(`{0} ORDER BY id DESC`, querySQL)
 
 	log.Println("querySQL:", querySQL)
@@ -432,7 +455,9 @@ func (c *Copywriter) GetSearchRecommends() (srs []SearchRecommend, err error) {
 
 	for rows.Next() {
 		var sr SearchRecommend
-		rows.Scan(&sr.ID, &sr.StockName, &sr.StockCode, &sr.ActivityName, &sr.JumpURL, &sr.RecommendType, &sr.IsShow)
+		rows.Scan(&sr.ID, &sr.StockName, &sr.StockCode, &sr.ActivityName, &sr.JumpURL,
+			&sr.RecommendType, &sr.IsShow, &sr.Sort,
+			&sr.ShareTitle, &sr.ShareIconURL, &sr.ShareURL, &sr.ShareDesc)
 
 		srs = append(srs, sr)
 	}
@@ -443,24 +468,127 @@ func (c *Copywriter) GetSearchRecommends() (srs []SearchRecommend, err error) {
 	return
 }
 
+// AddSearchRecommend 新增搜索推荐
+func (c *Copywriter) AddSearchRecommend(sr SearchRecommend) (id int64, err error) {
+	insertSQL := utils.SetSQLFormat(`
+		INSERT INTO gpxj_app.t_search_recommend (
+			stock_name,stock_code,activity_name,jump_url,
+			share_title,share_desc,share_icon_url,share_url,
+			recommend_type,is_show,sort) 
+		VALUES
+			(
+			'{0}','{1}','{2}','{3}',
+			'{4}','{5}','{6}','{7}',
+			'{8}','{9}','{10}');
+		`, sr.StockName, sr.StockCode, sr.ActivityName, sr.JumpURL,
+		sr.ShareTitle, sr.ShareDesc, sr.ShareIconURL, sr.ShareURL,
+		sr.RecommendType, sr.IsShow, sr.Sort)
+
+	glog.Info("insertSQL:", insertSQL)
+
+	rs, err := db.SQLDB.Exec(insertSQL)
+	if nil != err {
+		return
+	}
+
+	id, err = rs.LastInsertId()
+	if nil != err {
+		return
+	}
+
+	return
+}
+
+// ModifySearchRecommend 修改搜索推荐
+func (c *Copywriter) ModifySearchRecommend(sr SearchRecommend) (id int64, err error) {
+	updateSQL := utils.SetSQLFormat(`
+	UPDATE 
+		gpxj_app.t_search_recommend 
+	SET
+		stock_name = '{1}',
+		stock_code = '{2}',
+		activity_name = '{3}',
+		jump_url = '{4}',
+		share_title = '{5}',
+		share_desc = '{6}',
+		share_icon_url = '{7}',
+		share_url = '{8}',
+		recommend_type = '{9}',
+		is_show = '{10}',
+		sort = '{11}'
+	WHERE id = '{0}' ;
+	`, sr.ID,
+		sr.StockName, sr.StockCode, sr.ActivityName, sr.JumpURL,
+		sr.ShareTitle, sr.ShareDesc, sr.ShareIconURL, sr.ShareURL,
+		sr.RecommendType, sr.IsShow, sr.Sort)
+
+	glog.Info("updateSQL:", updateSQL)
+
+	stmt, err := db.SQLDB.Prepare(updateSQL)
+	if nil != err {
+		return
+	}
+
+	rs, err := stmt.Exec()
+	if nil != err {
+		return
+	}
+
+	id, err = rs.RowsAffected()
+	if nil != err {
+		return
+	}
+	return
+}
+
+// DropSearchRecommend 删除搜索推荐
+func (c *Copywriter) DropSearchRecommend(sr SearchRecommend) (id int64, err error) {
+
+	deleteSQL := utils.SetSQLFormat(`DELETE FROM gpxj_app.t_search_recommend WHERE id ='{0}'`, sr.ID)
+	glog.Info("deleteSQL:", deleteSQL)
+
+	rs, err := db.SQLDB.Exec(deleteSQL)
+	if nil != err {
+		return
+	}
+	id, err = rs.RowsAffected()
+	if nil != err {
+		return
+	}
+	return
+}
+
 // MarketingLabel 行情营销标签
 type MarketingLabel struct {
-	ID      int    `json:"id"`
-	TagName string `json:"tag_name"`
-	JumpURL string `json:"jump_url"`
-	Place   string `json:"place"`
-	IsShow  int    `json:"is_show"`
+	ID           int    `json:"id"`
+	TagName      string `json:"tag_name"`
+	JumpURL      string `json:"jump_url"`
+	Place        string `json:"place"`
+	IsShow       int    `json:"is_show"`
+	ShareTitle   string `json:"share_title"`
+	ShareIconURL string `json:"share_icon_url"`
+	ShareURL     string `json:"share_url"`
+	ShareDesc    string `json:"share_desc"`
 }
 
 // GetMarketingLabels  查询行情营销标签
-func (c *Copywriter) GetMarketingLabels() (labels []MarketingLabel, err error) {
+func (c *Copywriter) GetMarketingLabels(status string) (labels []MarketingLabel, err error) {
 	labels = make([]MarketingLabel, 0)
 
 	querySQL := utils.SetSQLFormat(`
-		SELECT id,tag_name,jump_url,place,is_show
+		SELECT id,tag_name,jump_url,place,is_show,
+				share_title,share_desc,share_icon_url,share_url
 		FROM gpxj_app.t_marketing_label 
  		WHERE 1
 		`)
+
+	if "" != status {
+		if "1" == status {
+			querySQL = utils.SetSQLFormat(`{0} AND is_show = 1`, querySQL)
+		} else if "2" == status {
+			querySQL = utils.SetSQLFormat(`{0} AND is_show = 0`, querySQL)
+		}
+	}
 
 	querySQL = utils.SetSQLFormat(`{0} ORDER BY id DESC`, querySQL)
 
@@ -475,7 +603,8 @@ func (c *Copywriter) GetMarketingLabels() (labels []MarketingLabel, err error) {
 
 	for rows.Next() {
 		var label MarketingLabel
-		rows.Scan(&label.ID, &label.TagName, &label.JumpURL, &label.Place, &label.IsShow)
+		rows.Scan(&label.ID, &label.TagName, &label.JumpURL, &label.Place, &label.IsShow,
+			&label.ShareTitle, &label.ShareDesc, &label.ShareIconURL, &label.ShareURL)
 
 		labels = append(labels, label)
 	}
@@ -484,5 +613,87 @@ func (c *Copywriter) GetMarketingLabels() (labels []MarketingLabel, err error) {
 		return
 	}
 
+	return
+}
+
+// AddMarketingLabel 新增行情营销标签
+func (c *Copywriter) AddMarketingLabel(ml MarketingLabel) (id int64, err error) {
+	insertSQL := utils.SetSQLFormat(`
+	INSERT INTO gpxj_app.t_marketing_label (
+		tag_name,jump_url,place,is_show,
+		share_title,share_desc,share_icon_url,share_url) 
+	  VALUES
+		(
+		  '{0}','{1}','{2}','{3}',
+		  '{4}','{5}','{6}','{7}'
+		);
+		`, ml.TagName, ml.JumpURL, ml.Place, ml.IsShow,
+		ml.ShareTitle, ml.ShareDesc, ml.ShareIconURL, ml.ShareURL)
+	glog.Info("insertSQL:", insertSQL)
+
+	rs, err := db.SQLDB.Exec(insertSQL)
+	if nil != err {
+		return
+	}
+
+	id, err = rs.LastInsertId()
+	if nil != err {
+		return
+	}
+
+	return
+}
+
+// ModifyMarketingLabel 修改行情营销标签
+func (c *Copywriter) ModifyMarketingLabel(ml MarketingLabel) (id int64, err error) {
+	updateSQL := utils.SetSQLFormat(`
+	UPDATE 
+		gpxj_app.t_marketing_label 
+	SET
+		tag_name = '{1}',
+		jump_url = '{2}',
+		place = '{3}',
+		is_show = '{4}',
+		share_title = '{5}',
+		share_desc = '{6}',
+		share_icon_url = '{7}',
+		share_url = '{8}'
+	WHERE id = '{0}';
+	`, ml.ID,
+		ml.TagName, ml.JumpURL, ml.Place, ml.IsShow,
+		ml.ShareTitle, ml.ShareDesc, ml.ShareIconURL, ml.ShareURL)
+	glog.Info("updateSQL:", updateSQL)
+
+	stmt, err := db.SQLDB.Prepare(updateSQL)
+	if nil != err {
+		return
+	}
+
+	rs, err := stmt.Exec()
+	if nil != err {
+		return
+	}
+
+	id, err = rs.RowsAffected()
+	if nil != err {
+		return
+	}
+
+	return
+}
+
+// DropMarketingLabel 删除行情营销标签
+func (c *Copywriter) DropMarketingLabel(ml MarketingLabel) (id int64, err error) {
+	deleteSQL := utils.SetSQLFormat(`DELETE FROM gpxj_app.t_marketing_label WHERE id ='{0}'`, ml.ID)
+	glog.Info("deleteSQL:", deleteSQL)
+
+	rs, err := db.SQLDB.Exec(deleteSQL)
+	if nil != err {
+		return
+	}
+	id, err = rs.RowsAffected()
+	if nil != err {
+		return
+	}
 	return
 }

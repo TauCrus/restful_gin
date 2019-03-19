@@ -117,6 +117,10 @@ func DropBannerAPI(c *gin.Context) {
 		glog.Error(err)
 	}
 	raRows, err := new(models.Copywriter).DropBanner(banner)
+	if nil != err {
+		glog.Error(err)
+	}
+
 	if raRows > 0 {
 		msg := fmt.Sprintf("Delete Banner %d successful %d", banner.ID, raRows)
 		c.JSON(http.StatusOK, gin.H{
@@ -213,6 +217,10 @@ func DropStartPageAPI(c *gin.Context) {
 		glog.Error(err)
 	}
 	raRows, err := new(models.Copywriter).DropStartPage(startpage)
+	if nil != err {
+		glog.Error(err)
+	}
+
 	if raRows > 0 {
 		msg := fmt.Sprintf("Delete StartPage %d successful %d", startpage.ID, raRows)
 		c.JSON(http.StatusOK, gin.H{
@@ -234,9 +242,11 @@ type GetSearchRecommendsResult struct {
 
 // GetSearchRecommendsAPI 查询搜索推荐接口
 func GetSearchRecommendsAPI(c *gin.Context) {
+	recommendType := c.Request.FormValue("recommend_type")
+	status := c.Request.FormValue("status")
 	cw := models.Copywriter{}
 
-	srs, err := cw.GetSearchRecommends()
+	srs, err := cw.GetSearchRecommends(recommendType, status)
 	if nil != err {
 		log.Fatalln(err)
 	}
@@ -249,6 +259,85 @@ func GetSearchRecommendsAPI(c *gin.Context) {
 	})
 }
 
+// AddSearchRecommendAPI 新增搜索推荐接口
+func AddSearchRecommendAPI(c *gin.Context) {
+	sr := models.SearchRecommend{}
+	err := c.Bind(&sr)
+	if nil != err {
+		glog.Error(err)
+	}
+
+	raRows, err := new(models.Copywriter).AddSearchRecommend(sr)
+	if nil != err {
+		glog.Error(err)
+	}
+
+	if raRows > 0 {
+		c.JSON(http.StatusOK, gin.H{
+			"success": true,
+			"result":  gin.H{"id": raRows},
+		})
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"result":  "error add",
+		})
+	}
+}
+
+// ModifySearchRecommendAPI 修改搜索推荐接口
+func ModifySearchRecommendAPI(c *gin.Context) {
+	sr := models.SearchRecommend{}
+	err := c.Bind(&sr)
+	if nil != err {
+		glog.Error(err)
+	}
+
+	raRows, err := new(models.Copywriter).ModifySearchRecommend(sr)
+	if nil != err {
+		glog.Error(err)
+	}
+
+	msg := fmt.Sprintf("Update SearchRecommend %d successful %d", sr.ID, raRows)
+	if raRows > 0 {
+		c.JSON(http.StatusOK, gin.H{
+			"success": true,
+			"result":  msg,
+		})
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"result":  "error modify",
+		})
+	}
+}
+
+// DropSearchRecommendAPI 删除搜索推荐接口
+func DropSearchRecommendAPI(c *gin.Context) {
+	sr := models.SearchRecommend{}
+	err := c.Bind(&sr)
+	if nil != err {
+		glog.Error(err)
+	}
+	raRows, err := new(models.Copywriter).DropSearchRecommend(sr)
+	if nil != err {
+		glog.Error(err)
+	}
+
+	if raRows > 0 {
+		msg := fmt.Sprintf("Delete SearchRecommend %d successful %d", sr.ID, raRows)
+		c.JSON(http.StatusOK, gin.H{
+			"success": true,
+			"result":  msg,
+		})
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"result":  "error delete",
+		})
+	}
+}
+
 // GetMarketingLabelsResult 搜索推荐结果
 type GetMarketingLabelsResult struct {
 	Data []models.MarketingLabel `json:"data"`
@@ -256,9 +345,10 @@ type GetMarketingLabelsResult struct {
 
 // GetMarketingLabelsAPI 查询搜索推荐接口
 func GetMarketingLabelsAPI(c *gin.Context) {
-	cw := models.Copywriter{}
+	status := c.Request.FormValue("status")
 
-	labels, err := cw.GetMarketingLabels()
+	cw := models.Copywriter{}
+	labels, err := cw.GetMarketingLabels(status)
 	if nil != err {
 		log.Fatalln(err)
 	}
@@ -269,4 +359,80 @@ func GetMarketingLabelsAPI(c *gin.Context) {
 		"success": true,
 		"result":  result,
 	})
+}
+
+// AddMarketingLabelAPI 新增行情营销标签 接口
+func AddMarketingLabelAPI(c *gin.Context) {
+	ml := models.MarketingLabel{}
+	err := c.Bind(&ml)
+	if nil != err {
+		glog.Error(err)
+	}
+	raRows, err := new(models.Copywriter).AddMarketingLabel(ml)
+	if nil != err {
+		glog.Error(err)
+	}
+	if raRows > 0 {
+		c.JSON(http.StatusOK, gin.H{
+			"success": true,
+			"result":  gin.H{"id": raRows},
+		})
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"result":  "error add",
+		})
+	}
+}
+
+// ModifyMarketingLabelAPI 修改行情营销标签
+func ModifyMarketingLabelAPI(c *gin.Context) {
+	ml := models.MarketingLabel{}
+	err := c.Bind(&ml)
+	if nil != err {
+		glog.Error(err)
+	}
+	raRows, err := new(models.Copywriter).ModifyMarketingLabel(ml)
+	if nil != err {
+		glog.Error(err)
+	}
+
+	msg := fmt.Sprintf("Update MarketingLabel %d successful %d", ml.ID, raRows)
+	if raRows > 0 {
+		c.JSON(http.StatusOK, gin.H{
+			"success": true,
+			"result":  msg,
+		})
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"result":  "error modify",
+		})
+	}
+}
+
+// DropMarketingLabelAPI 删除行情营销标签
+func DropMarketingLabelAPI(c *gin.Context) {
+	ml := models.MarketingLabel{}
+	err := c.Bind(&ml)
+	if nil != err {
+		glog.Error(err)
+	}
+	raRows, err := new(models.Copywriter).DropMarketingLabel(ml)
+	if nil != err {
+		glog.Error(err)
+	}
+
+	if raRows > 0 {
+		msg := fmt.Sprintf("Delete MarketingLabel %d successful %d", ml.ID, raRows)
+		c.JSON(http.StatusOK, gin.H{
+			"success": true,
+			"result":  msg,
+		})
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"result":  "error delete",
+		})
+	}
 }

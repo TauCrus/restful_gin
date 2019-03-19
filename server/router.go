@@ -106,7 +106,14 @@ func initRouter() *gin.Engine {
 		cw.DELETE("/startpage", DropStartPageAPI)
 
 		cw.GET("/searchrecommend", GetSearchRecommendsAPI)
+		cw.POST("/searchrecommend", AddSearchRecommendAPI)
+		cw.PUT("/searchrecommend", ModifySearchRecommendAPI)
+		cw.DELETE("/searchrecommend", DropSearchRecommendAPI)
+
 		cw.GET("/marketinglabel", GetMarketingLabelsAPI)
+		cw.POST("/marketinglabel", AddMarketingLabelAPI)
+		cw.PUT("/marketinglabel", ModifyMarketingLabelAPI)
+		cw.DELETE("/marketinglabel", DropMarketingLabelAPI)
 
 		// 首页组
 		hp := router.Group("api/content/homepage")
