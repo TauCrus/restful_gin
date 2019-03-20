@@ -118,9 +118,25 @@ func initRouter() *gin.Engine {
 		// 首页组
 		hp := router.Group("api/content/homepage")
 		hp.GET("/column", GetColumnsAPI)
+		hp.POST("/column", AddColumnAPI)
+		hp.PUT("/column", ModifyColumnAPI)
+		hp.DELETE("/column", DropColumnAPI)
+
 		hp.GET("/productcolumn", GetProductColumnsAPI)
+		hp.POST("/productcolumn", AddProductColumnAPI)
+		hp.PUT("/productcolumn", ModifyProductColumnAPI)
+		hp.DELETE("/productcolumn", DropProductColumnAPI)
+
 		hp.GET("/spcolumn", GetSPColumnsAPI)
+		hp.POST("/spcolumn", AddSPColumnAPI)
+		hp.PUT("/spcolumn", ModifySPColumnAPI)
+		hp.DELETE("/spcolumn", DropSPColumnAPI)
+
 		hp.GET("/articlecolumn", GetArticleColumnsAPI)
+		hp.POST("/articlecolumn", AddArticleColumnAPI)
+		hp.PUT("/articlecolumn", ModifyArticleColumnAPI)
+		hp.DELETE("/articlecolumn", DropArticleColumnAPI)
+
 		hp.GET("/adcolumn", GetAdColumnsAPI)
 		hp.GET("/shortcutmenu", GetShortCutMenusAPI)
 		hp.GET("/productclassify", GetProductClassifysAPI)
