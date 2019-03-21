@@ -17,9 +17,13 @@ type GetColumnsResult struct {
 
 // GetColumnsAPI 查询首页栏目接口
 func GetColumnsAPI(c *gin.Context) {
-	hp := models.Homepage{}
+	columnTypeID := c.Request.FormValue("column_type_id")
+	columnTypeIDs := c.Request.FormValue("column_type_ids")
+	columnName := c.Request.FormValue("column_name")
+	status := c.Request.FormValue("status")
 
-	columns, err := hp.GetColumns()
+	hp := models.Homepage{}
+	columns, err := hp.GetColumns(columnTypeID, columnTypeIDs, columnName, status)
 	if nil != err {
 		log.Fatalln(err)
 	}
@@ -110,6 +114,28 @@ func DropColumnAPI(c *gin.Context) {
 	}
 }
 
+// GetColumnTypesResult 首页栏目类型结果
+type GetColumnTypesResult struct {
+	Data []models.ColumnType `json:"data"`
+}
+
+// GetColumnTypesAPI 查询首页栏目类型接口
+func GetColumnTypesAPI(c *gin.Context) {
+
+	hp := models.Homepage{}
+	cts, err := hp.GetColumnTypes()
+	if nil != err {
+		log.Fatalln(err)
+	}
+
+	result := GetColumnTypesResult{Data: cts}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"result":  result,
+	})
+}
+
 // GetProductColumnsResult 首页推荐产品栏目结果
 type GetProductColumnsResult struct {
 	Data []models.ProductColumn `json:"data"`
@@ -117,9 +143,12 @@ type GetProductColumnsResult struct {
 
 // GetProductColumnsAPI 查询首页推荐产品栏目接口
 func GetProductColumnsAPI(c *gin.Context) {
-	hp := models.Homepage{}
+	keyword := c.Request.FormValue("keyword")
+	columnID := c.Request.FormValue("column_id")
+	status := c.Request.FormValue("status")
 
-	pcs, err := hp.GetProductColumns()
+	hp := models.Homepage{}
+	pcs, err := hp.GetProductColumns(keyword, columnID, status)
 	if nil != err {
 		log.Fatalln(err)
 	}
@@ -217,8 +246,12 @@ type GetSPColumnsResult struct {
 
 // GetSPColumnsAPI 查询首页荐股产品栏目接口
 func GetSPColumnsAPI(c *gin.Context) {
+	keyword := c.Request.FormValue("keyword")
+	columnID := c.Request.FormValue("column_id")
+	status := c.Request.FormValue("status")
+
 	hp := models.Homepage{}
-	spcs, err := hp.GetSPColumns()
+	spcs, err := hp.GetSPColumns(keyword, columnID, status)
 	if nil != err {
 		log.Fatalln(err)
 	}
@@ -410,12 +443,13 @@ func DropArticleColumnAPI(c *gin.Context) {
 
 // GetAdColumnsAPI 查询首页广告栏目接口
 func GetAdColumnsAPI(c *gin.Context) {
-	title := c.Request.FormValue("title")
-	activityName := c.Request.FormValue("activity_name")
+	keyword := c.Request.FormValue("keyword")
+	placeID := c.Request.FormValue("place_id")
+	columnID := c.Request.FormValue("column_id")
 	status := c.Request.FormValue("status")
 
 	cw := models.Copywriter{}
-	banners, err := cw.GetBanners(1, title, activityName, status)
+	banners, err := cw.GetBanners(1, keyword, placeID, columnID, status)
 	if nil != err {
 		log.Fatalln(err)
 	}
@@ -426,6 +460,84 @@ func GetAdColumnsAPI(c *gin.Context) {
 		"success": true,
 		"result":  result,
 	})
+}
+
+// AddAdColumnAPI 新增首页广告栏目接口
+func AddAdColumnAPI(c *gin.Context) {
+	banner := models.Banner{}
+	err := c.Bind(&banner)
+	if nil != err {
+		glog.Error(err)
+	}
+	raRows, err := new(models.Copywriter).AddBanner(banner)
+	if nil != err {
+		glog.Error(err)
+	}
+
+	if raRows > 0 {
+		c.JSON(http.StatusOK, gin.H{
+			"success": true,
+			"result":  gin.H{"id": raRows},
+		})
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"result":  "error add",
+		})
+	}
+}
+
+// ModifyAdColumnAPI 修改首页广告栏目接口
+func ModifyAdColumnAPI(c *gin.Context) {
+	banner := models.Banner{}
+	err := c.Bind(&banner)
+	if nil != err {
+		glog.Error(err)
+	}
+
+	raRows, err := new(models.Copywriter).ModifyBanner(banner)
+	if nil != err {
+		glog.Error(err)
+	}
+
+	msg := fmt.Sprintf("Update AdColumn %d successful %d", banner.ID, raRows)
+	if raRows > 0 {
+		c.JSON(http.StatusOK, gin.H{
+			"success": true,
+			"result":  msg,
+		})
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"result":  "error modify",
+		})
+	}
+}
+
+// DropAdColumnAPI 删除首页广告栏目接口
+func DropAdColumnAPI(c *gin.Context) {
+	banner := models.Banner{}
+	err := c.Bind(&banner)
+	if nil != err {
+		glog.Error(err)
+	}
+	raRows, err := new(models.Copywriter).DropBanner(banner)
+	if nil != err {
+		glog.Error(err)
+	}
+
+	if raRows > 0 {
+		msg := fmt.Sprintf("Delete AdColumn %d successful %d", banner.ID, raRows)
+		c.JSON(http.StatusOK, gin.H{
+			"success": true,
+			"result":  msg,
+		})
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"result":  "error delete",
+		})
+	}
 }
 
 // GetShortCutMenusResult 首页快捷菜单结果
@@ -449,6 +561,84 @@ func GetShortCutMenusAPI(c *gin.Context) {
 	})
 }
 
+// AddShortCutMenuAPI 新增首页快捷菜单接口
+func AddShortCutMenuAPI(c *gin.Context) {
+	scm := models.ShortCutMenu{}
+	err := c.Bind(&scm)
+	if nil != err {
+		glog.Error(err)
+	}
+
+	raRows, err := new(models.Homepage).AddShortCutMenu(scm)
+	if nil != err {
+		glog.Error(err)
+	}
+
+	if raRows > 0 {
+		c.JSON(http.StatusOK, gin.H{
+			"success": true,
+			"result":  gin.H{"id": raRows},
+		})
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"result":  "error add",
+		})
+	}
+}
+
+// ModifyShortCutMenuAPI 修改首页快捷菜单接口
+func ModifyShortCutMenuAPI(c *gin.Context) {
+	scm := models.ShortCutMenu{}
+	err := c.Bind(&scm)
+	if nil != err {
+		glog.Error(err)
+	}
+	raRows, err := new(models.Homepage).ModifyShortCutMenu(scm)
+	if nil != err {
+		glog.Error(err)
+	}
+
+	msg := fmt.Sprintf("Update ShortCutMenu %d successful %d", scm.ID, raRows)
+	if raRows > 0 {
+		c.JSON(http.StatusOK, gin.H{
+			"success": true,
+			"result":  msg,
+		})
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"result":  "error modify",
+		})
+	}
+}
+
+// DropShortCutMenuAPI 删除首页快捷菜单接口
+func DropShortCutMenuAPI(c *gin.Context) {
+	scm := models.ShortCutMenu{}
+	err := c.Bind(&scm)
+	if nil != err {
+		glog.Error(err)
+	}
+	raRows, err := new(models.Homepage).DropShortCutMenu(scm)
+	if nil != err {
+		glog.Error(err)
+	}
+
+	if raRows > 0 {
+		msg := fmt.Sprintf("Delete ShortCutMenu %d successful %d", scm.ID, raRows)
+		c.JSON(http.StatusOK, gin.H{
+			"success": true,
+			"result":  msg,
+		})
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"result":  "error delete",
+		})
+	}
+}
+
 // GetProductClassifyResult 首页产品分类结果
 type GetProductClassifyResult struct {
 	Data []models.ProductClassify `json:"data"`
@@ -470,12 +660,90 @@ func GetProductClassifysAPI(c *gin.Context) {
 	})
 }
 
+// AddProductClassifyAPI 新增首页产品分类接口
+func AddProductClassifyAPI(c *gin.Context) {
+	pc := models.ProductClassify{}
+	err := c.Bind(&pc)
+	if nil != err {
+		glog.Error(err)
+	}
+
+	raRows, err := new(models.Homepage).AddProductClassify(pc)
+	if nil != err {
+		glog.Error(err)
+	}
+
+	if raRows > 0 {
+		c.JSON(http.StatusOK, gin.H{
+			"success": true,
+			"result":  gin.H{"id": raRows},
+		})
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"result":  "error add",
+		})
+	}
+}
+
+// ModifyProductClassifyAPI 修改首页产品分类接口
+func ModifyProductClassifyAPI(c *gin.Context) {
+	scm := models.ProductClassify{}
+	err := c.Bind(&scm)
+	if nil != err {
+		glog.Error(err)
+	}
+	raRows, err := new(models.Homepage).ModifyProductClassify(scm)
+	if nil != err {
+		glog.Error(err)
+	}
+
+	msg := fmt.Sprintf("Update ProductClassify %d successful %d", scm.ID, raRows)
+	if raRows > 0 {
+		c.JSON(http.StatusOK, gin.H{
+			"success": true,
+			"result":  msg,
+		})
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"result":  "error modify",
+		})
+	}
+}
+
+// DropProductClassifyAPI 删除首页产品分类接口
+func DropProductClassifyAPI(c *gin.Context) {
+	pc := models.ProductClassify{}
+	err := c.Bind(&pc)
+	if nil != err {
+		glog.Error(err)
+	}
+	raRows, err := new(models.Homepage).DropProductClassify(pc)
+	if nil != err {
+		glog.Error(err)
+	}
+
+	if raRows > 0 {
+		msg := fmt.Sprintf("Delete ProductClassify %d successful %d", pc.ID, raRows)
+		c.JSON(http.StatusOK, gin.H{
+			"success": true,
+			"result":  msg,
+		})
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"result":  "error delete",
+		})
+	}
+}
+
 // GetActivityMarketingResult 活动营销结果
 type GetActivityMarketingResult struct {
 	Data []models.ActivityMarketing `json:"data"`
 }
 
-// GetSuspendAdAPI 查询悬浮广告接口
+// GetSuspendAdsAPI 查询悬浮广告接口
 func GetSuspendAdsAPI(c *gin.Context) {
 	hp := models.Homepage{}
 	ams, err := hp.GetActivityMarketings(1)
@@ -505,4 +773,82 @@ func GetPopupsAPI(c *gin.Context) {
 		"success": true,
 		"result":  result,
 	})
+}
+
+// AddActivityMarketingAPI 新增营销活动接口
+func AddActivityMarketingAPI(c *gin.Context) {
+	am := models.ActivityMarketing{}
+	err := c.Bind(&am)
+	if nil != err {
+		glog.Error(err)
+	}
+
+	raRows, err := new(models.Homepage).AddActivityMarketing(am)
+	if nil != err {
+		glog.Error(err)
+	}
+
+	if raRows > 0 {
+		c.JSON(http.StatusOK, gin.H{
+			"success": true,
+			"result":  gin.H{"id": raRows},
+		})
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"result":  "error add",
+		})
+	}
+}
+
+// ModifyActivityMarketingAPI 修改营销活动接口
+func ModifyActivityMarketingAPI(c *gin.Context) {
+	am := models.ActivityMarketing{}
+	err := c.Bind(&am)
+	if nil != err {
+		glog.Error(err)
+	}
+	raRows, err := new(models.Homepage).ModifyActivityMarketing(am)
+	if nil != err {
+		glog.Error(err)
+	}
+
+	msg := fmt.Sprintf("Update ActivityMarketing %d successful %d", am.ID, raRows)
+	if raRows > 0 {
+		c.JSON(http.StatusOK, gin.H{
+			"success": true,
+			"result":  msg,
+		})
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"result":  "error modify",
+		})
+	}
+}
+
+// DropActivityMarketingAPI 删除营销活动接口
+func DropActivityMarketingAPI(c *gin.Context) {
+	am := models.ActivityMarketing{}
+	err := c.Bind(&am)
+	if nil != err {
+		glog.Error(err)
+	}
+	raRows, err := new(models.Homepage).DropActivityMarketing(am)
+	if nil != err {
+		glog.Error(err)
+	}
+
+	if raRows > 0 {
+		msg := fmt.Sprintf("Delete ActivityMarketing %d successful %d", am.ID, raRows)
+		c.JSON(http.StatusOK, gin.H{
+			"success": true,
+			"result":  msg,
+		})
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"result":  "error delete",
+		})
+	}
 }

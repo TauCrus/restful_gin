@@ -18,12 +18,13 @@ type GetBannersResult struct {
 // GetBannersAPI 查询轮播图接口
 func GetBannersAPI(c *gin.Context) {
 
-	title := c.Request.FormValue("title")
-	activityName := c.Request.FormValue("activity_name")
+	keyword := c.Request.FormValue("keyword")
+	placeID := c.Request.FormValue("place_id")
+	columnID := c.Request.FormValue("column_id")
 	status := c.Request.FormValue("status")
 
 	cw := models.Copywriter{}
-	banners, err := cw.GetBanners(0, title, activityName, status)
+	banners, err := cw.GetBanners(0, keyword, placeID, columnID, status)
 	if nil != err {
 		log.Fatalln(err)
 	}

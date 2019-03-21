@@ -15,6 +15,8 @@ type Copywriter struct {
 // Banner 轮播图
 type Banner struct {
 	ID           int    `json:"id"`
+	ColumnID     int    `json:"column_id"`
+	ColumnName   string `json:"column_name"`
 	Title        string `json:"title"`
 	ImamgeURL    string `json:"image_url"`
 	JumpURL      string `json:"jump_url"`
@@ -31,11 +33,13 @@ type Banner struct {
 }
 
 // GetBanners 查询轮播图
-func (c *Copywriter) GetBanners(isHp int, title, activityName, status string) (banners []Banner, err error) {
+func (c *Copywriter) GetBanners(isHp int, keyword, placeID, columnID, status string) (banners []Banner, err error) {
 	banners = make([]Banner, 0)
 
 	querySQL := utils.SetSQLFormat(`
 		SELECT b.id,
+			b.column_id,
+			IFNULL(c.column_name,""),
 			b.title,
 			b.image_url ,
 			b.jump_url ,
@@ -51,6 +55,7 @@ func (c *Copywriter) GetBanners(isHp int, title, activityName, status string) (b
 			IFNULL(share_desc,'')
 		FROM gpxj_app.t_banner b
 		LEFT JOIN gpxj_app.t_banner_place bp ON b.place_id = bp.id
+		LEFT JOIN gpxj_app.t_column c ON b.column_id =  c.id
 		WHERE 1
 	`)
 
@@ -60,12 +65,16 @@ func (c *Copywriter) GetBanners(isHp int, title, activityName, status string) (b
 		querySQL = utils.SetSQLFormat(`{0} AND  b.place_id BETWEEN 1 AND 5`, querySQL)
 	}
 
-	if "" != title {
-		querySQL = utils.SetSQLFormat(`{0} AND b.title like '%{1}%'`, querySQL, title)
+	if "" != keyword {
+		querySQL = utils.SetSQLFormat(`{0} AND (b.title like '%{1}%' OR b.activity_name like '%{1}%' )`, querySQL, keyword)
 	}
 
-	if "" != activityName {
-		querySQL = utils.SetSQLFormat(`{0} AND b.activity_name like '%{1}%'`, querySQL, activityName)
+	if "0" != placeID {
+		querySQL = utils.SetSQLFormat(`{0} AND b.place_id = '{1}'`, querySQL, placeID)
+	}
+
+	if "0" != columnID {
+		querySQL = utils.SetSQLFormat(`{0} AND b.column_id = '{1}'`, querySQL, columnID)
 	}
 
 	if "" != status {
@@ -91,7 +100,8 @@ func (c *Copywriter) GetBanners(isHp int, title, activityName, status string) (b
 
 	for rows.Next() {
 		var banner Banner
-		rows.Scan(&banner.ID, &banner.Title, &banner.ImamgeURL, &banner.JumpURL, &banner.Uptime,
+		rows.Scan(&banner.ID, &banner.ColumnID, &banner.ColumnName,
+			&banner.Title, &banner.ImamgeURL, &banner.JumpURL, &banner.Uptime,
 			&banner.IsShow, &banner.InReview, &banner.ActivityName, &banner.PlaceID, &banner.Place,
 			&banner.ShareTitle, &banner.ShareIconURL, &banner.ShareURL, &banner.ShareDesc)
 
@@ -153,12 +163,13 @@ func (c *Copywriter) AddBanner(banner Banner) (id int64, err error) {
 		place_id,uptime,is_show,activity_name,in_review) 
 	  VALUES
 		(
-		  '0','{0}','{1}','{2}',
+		  '{12}','{0}','{1}','{2}',
 		'{3}','{4}','{5}','{6}',
 		  '{7}','{8}','{9}','{10}','{11}')
 		  `, banner.Title, banner.ImamgeURL, banner.JumpURL,
 		banner.ShareTitle, banner.ShareIconURL, banner.ShareURL, banner.ShareDesc,
-		banner.PlaceID, banner.Uptime, banner.IsShow, banner.ActivityName, banner.InReview)
+		banner.PlaceID, banner.Uptime, banner.IsShow, banner.ActivityName, banner.InReview,
+		banner.ColumnID)
 
 	glog.Info("insertSQL:", insertSQL)
 
@@ -192,11 +203,13 @@ func (c *Copywriter) ModifyBanner(banner Banner) (id int64, err error) {
 			uptime = '{9}',
 			is_show = '{10}',
 			activity_name = '{11}',
-			in_review = '{12}'
+			in_review = '{12}',
+			column_id = '{13}'
 		WHERE id = '{0}' ;
 		`, banner.ID, banner.Title, banner.ImamgeURL, banner.JumpURL,
 		banner.ShareTitle, banner.ShareDesc, banner.ShareIconURL, banner.ShareURL,
-		banner.PlaceID, banner.Uptime, banner.IsShow, banner.ActivityName, banner.InReview)
+		banner.PlaceID, banner.Uptime, banner.IsShow, banner.ActivityName, banner.InReview,
+		banner.ColumnID)
 
 	glog.Info("updateSQL:", updateSQL)
 

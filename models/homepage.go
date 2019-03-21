@@ -25,7 +25,7 @@ type Column struct {
 }
 
 // GetColumns 获取栏目
-func (h *Homepage) GetColumns() (columns []Column, err error) {
+func (h *Homepage) GetColumns(columnTypeID, columnTypeIDs, columnName, status string) (columns []Column, err error) {
 	columns = make([]Column, 0)
 
 	querySQL := utils.SetSQLFormat(`
@@ -33,10 +33,30 @@ func (h *Homepage) GetColumns() (columns []Column, err error) {
 			column_type_id,column_type_name,
 			column_name ,jump_url,jump_id,
 			sort,is_show,in_review
-		FROM t_column 
+		FROM  gpxj_app.t_column 
 		WHERE 1
 	`)
 
+	if "0" != columnTypeID {
+		querySQL = utils.SetSQLFormat(`{0} AND column_type_id = '{1}'`, querySQL, columnTypeID)
+	}
+	if "" != columnTypeIDs {
+		querySQL = utils.SetSQLFormat(`{0} AND column_type_id IN ({1})`, querySQL, columnTypeIDs)
+
+	}
+	if "" != columnName {
+		querySQL = utils.SetSQLFormat(`{0} AND column_name like '%{1}%'`, querySQL, columnName)
+	}
+
+	if "" != status {
+		if "1" == status {
+			querySQL = utils.SetSQLFormat(`{0} AND is_show = 1`, querySQL)
+		} else if "2" == status {
+			querySQL = utils.SetSQLFormat(`{0} AND is_show = 0`, querySQL)
+		} else if "3" == status {
+			querySQL = utils.SetSQLFormat(`{0} AND in_review = 1`, querySQL)
+		}
+	}
 	querySQL = utils.SetSQLFormat(`{0} ORDER BY id DESC`, querySQL)
 
 	log.Println("querySQL:", querySQL)
@@ -109,7 +129,7 @@ func (h *Homepage) ModifyColumn(column Column) (id int64, err error) {
 			sort = '{6}',
 			is_show = '{7}',
 			in_review = '{8}'
-		WHERE id = '{0' ;
+		WHERE id = '{0}' ;
 		`, column.ID,
 		column.ColumnTypeID, column.ColumnTypeName, column.ColumnName,
 		column.JumpURL, column.JumpID,
@@ -152,11 +172,50 @@ func (h *Homepage) DropColumn(column Column) (id int64, err error) {
 	return
 }
 
+// ColumnType 栏目类型
+type ColumnType struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+}
+
+// GetColumnTypes 获取栏目分类
+func (h *Homepage) GetColumnTypes() (cts []ColumnType, err error) {
+	cts = make([]ColumnType, 0)
+
+	querySQL := utils.SetSQLFormat(`
+		SELECT id,name
+		FROM gpxj_app.t_column_type
+		WHERE id <> 1
+		ORDER BY id
+	`)
+
+	log.Println("querySQL:", querySQL)
+
+	rows, err := db.SQLDB.Query(querySQL)
+	defer rows.Close()
+
+	if nil != err {
+		return
+	}
+	for rows.Next() {
+		var ct ColumnType
+		rows.Scan(&ct.ID, &ct.Name)
+
+		cts = append(cts, ct)
+	}
+
+	if err = rows.Err(); nil != err {
+		return
+	}
+	return
+}
+
 // ProductColumn 首页产品推荐栏目
 type ProductColumn struct {
 	ID             int     `json:"id"`
 	ColumnID       int     `json:"column_id"`
 	ColumnName     string  `json:"column_name"`
+	ColumnTypeID   int     `json:"column_type_id"`
 	ColumnTypeName string  `json:"column_type_name"`
 	ImageURL       string  `json:"image_url"`
 	ProductName    string  `json:"product_name"`
@@ -175,7 +234,7 @@ type ProductColumn struct {
 }
 
 // GetProductColumns 查询首页产品推荐栏目
-func (h *Homepage) GetProductColumns() (pcs []ProductColumn, err error) {
+func (h *Homepage) GetProductColumns(keyword, columnID, status string) (pcs []ProductColumn, err error) {
 
 	pcs = make([]ProductColumn, 0)
 
@@ -183,18 +242,41 @@ func (h *Homepage) GetProductColumns() (pcs []ProductColumn, err error) {
 		SELECT  hpc.id,
 			hpc.column_id,
 			c.column_name,
+			c.column_type_id,
 			c.column_type_name,
 			hpc.image_url ,
+			hpc.jump_url ,
 			hpc.product_name,
 			hpc.product_class,
 			hpc.product_desc ,
 			hpc.subscribe_num ,
 			hpc.price,
-			hpc.is_show
+			hpc.sort,
+			hpc.is_show,
+			IFNULL(hpc.share_title,''),
+			IFNULL(hpc.share_icon_url,''),
+			IFNULL(hpc.share_url,''),
+			IFNULL(hpc.share_desc,'')
 		FROM t_homepage_product_recommend hpc
 		LEFT JOIN  t_column c ON c.id = hpc.column_id
 		WHERE 1
 	`)
+
+	if "" != keyword {
+		querySQL = utils.SetSQLFormat(`{0} AND CONCAT(c.column_name,c.column_type_name,hpc.product_name,hpc.product_class) like '%{1}%'`, querySQL, keyword)
+	}
+
+	if "0" != columnID {
+		querySQL = utils.SetSQLFormat(`{0} AND hpc.column_id = '{1}'`, querySQL, columnID)
+	}
+
+	if "" != status {
+		if "1" == status {
+			querySQL = utils.SetSQLFormat(`{0} AND hpc.is_show = 1`, querySQL)
+		} else if "2" == status {
+			querySQL = utils.SetSQLFormat(`{0} AND hpc.is_show = 0`, querySQL)
+		}
+	}
 
 	querySQL = utils.SetSQLFormat(`{0} ORDER BY id DESC`, querySQL)
 
@@ -208,9 +290,10 @@ func (h *Homepage) GetProductColumns() (pcs []ProductColumn, err error) {
 	}
 	for rows.Next() {
 		var pc ProductColumn
-		rows.Scan(&pc.ID, &pc.ColumnID, &pc.ColumnName, &pc.ColumnTypeName,
-			&pc.ImageURL, &pc.ProductName, &pc.ProductClass, &pc.ProductDesc,
-			&pc.SubscribeNum, &pc.Price, &pc.IsShow)
+		rows.Scan(&pc.ID, &pc.ColumnID, &pc.ColumnName, &pc.ColumnTypeID, &pc.ColumnTypeName,
+			&pc.ImageURL, &pc.JumpURL, &pc.ProductName, &pc.ProductClass, &pc.ProductDesc,
+			&pc.SubscribeNum, &pc.Price, &pc.Sort, &pc.IsShow,
+			&pc.ShareTitle, &pc.ShareIconURL, &pc.ShareURL, &pc.ShareDesc)
 
 		pcs = append(pcs, pc)
 	}
@@ -331,10 +414,11 @@ type SPColumn struct {
 	ID                 int     `json:"id"`
 	ColumnID           int     `json:"column_id"`
 	ColumnName         string  `json:"column_name"`
+	ColumnTypeID       int     `json:"column_type_id"`
 	ColumnTypeName     string  `json:"column_type_name"`
 	StockName          string  `json:"stock_name"`
 	StockCode          string  `json:"stock_code"`
-	SelectPrice        float64 `json:"select_price"`
+	SelectPrice        int     `json:"select_price"`
 	SelectTime         string  `json:"select_time"`
 	ProfitDesc         string  `json:"profit_desc"`
 	ProfitRatio        float64 `json:"profit_ratio"`
@@ -353,7 +437,7 @@ type SPColumn struct {
 }
 
 // GetSPColumns 查询 首页荐股产品栏目
-func (h *Homepage) GetSPColumns() (spcs []SPColumn, err error) {
+func (h *Homepage) GetSPColumns(keyword, columnID, status string) (spcs []SPColumn, err error) {
 
 	spcs = make([]SPColumn, 0)
 
@@ -362,18 +446,45 @@ func (h *Homepage) GetSPColumns() (spcs []SPColumn, err error) {
 			hpsr.id,
 			hpsr.column_id,
 			c.column_name,
+			c.column_type_id,
 			c.column_type_name,
 			hpsr.stock_name,
 			hpsr.stock_code,
 			hpsr.product_name,
 			hpsr.product_class,
+			hpsr.product_desc,
+			hpsr.select_price,
+			hpsr.select_time,
+			hpsr.profit_desc,
+			hpsr.profit_ratio,
 			hpsr.jump_url,
 			hpsr.stock_trend_image_url,
-			hpsr.is_show
+			hpsr.sort,
+			hpsr.is_show,
+			IFNULL(hpsr.share_title,''),
+			IFNULL(hpsr.share_icon_url,''),
+			IFNULL(hpsr.share_url,''),
+			IFNULL(hpsr.share_desc,'')
 		FROM gpxj_app.t_homepage_product_stock_recommend hpsr
 		LEFT JOIN gpxj_app.t_column c ON hpsr.column_id = c.id
 		WHERE 1
 	`)
+
+	if "" != keyword {
+		querySQL = utils.SetSQLFormat(`{0} AND CONCAT(c.column_name,c.column_type_name,hpsr.stock_name,hpsr.stock_code,hpsr.product_name,hpsr.product_class) like '%{1}%'`, querySQL, keyword)
+	}
+
+	if "0" != columnID {
+		querySQL = utils.SetSQLFormat(`{0} AND hpsr.column_id = '{1}'`, querySQL, columnID)
+	}
+
+	if "" != status {
+		if "1" == status {
+			querySQL = utils.SetSQLFormat(`{0} AND hpsr.is_show = 1`, querySQL)
+		} else if "2" == status {
+			querySQL = utils.SetSQLFormat(`{0} AND hpsr.is_show = 0`, querySQL)
+		}
+	}
 
 	querySQL = utils.SetSQLFormat(`{0} ORDER BY id DESC`, querySQL)
 
@@ -387,9 +498,11 @@ func (h *Homepage) GetSPColumns() (spcs []SPColumn, err error) {
 	}
 	for rows.Next() {
 		var spc SPColumn
-		rows.Scan(&spc.ID, &spc.ColumnID, &spc.ColumnName, &spc.ColumnTypeName,
-			&spc.StockName, &spc.StockCode, &spc.ProductName, &spc.ProductClass,
-			&spc.JumpURL, &spc.StockTrendImageURL, &spc.IsShow)
+		rows.Scan(&spc.ID, &spc.ColumnID, &spc.ColumnName, &spc.ColumnTypeID, &spc.ColumnTypeName,
+			&spc.StockName, &spc.StockCode, &spc.ProductName, &spc.ProductClass, &spc.ProductDesc,
+			&spc.SelectPrice, &spc.SelectTime, &spc.ProfitDesc, &spc.ProfitRatio,
+			&spc.JumpURL, &spc.StockTrendImageURL, &spc.Sort, &spc.IsShow,
+			&spc.ShareTitle, &spc.ShareIconURL, &spc.ShareURL, &spc.ShareDesc)
 
 		spcs = append(spcs, spc)
 	}
@@ -400,7 +513,7 @@ func (h *Homepage) GetSPColumns() (spcs []SPColumn, err error) {
 	return
 }
 
-// AddSPColumn 新增栏目
+// AddSPColumn 新增荐股产品栏目
 func (h *Homepage) AddSPColumn(spc SPColumn) (id int64, err error) {
 
 	insertSQL := utils.SetSQLFormat(`
@@ -441,7 +554,7 @@ func (h *Homepage) AddSPColumn(spc SPColumn) (id int64, err error) {
 	return
 }
 
-// ModifySPColumn 修改栏目
+// ModifySPColumn 修改荐股产品栏目
 func (h *Homepage) ModifySPColumn(spc SPColumn) (id int64, err error) {
 	updateSQL := utils.SetSQLFormat(`
 		UPDATE 
@@ -542,8 +655,13 @@ func (h *Homepage) GetArticleColumns() (acs []ArticleColumn, err error) {
 			c.column_type_name,
 			ha.icon_url ,
 			ha.nickname,
+			ha.content,
 			ha.jump_url,
-			ha.is_show
+			ha.is_show,
+			IFNULL(ha.share_title,''),
+			IFNULL(ha.share_icon_url,''),
+			IFNULL(ha.share_url,''),
+			IFNULL(ha.share_desc,'')
 		FROM t_homepage_article ha
 		LEFT JOIN t_column c ON ha.column_id = c.id
 		WHERE 1
@@ -562,7 +680,8 @@ func (h *Homepage) GetArticleColumns() (acs []ArticleColumn, err error) {
 	for rows.Next() {
 		var ac ArticleColumn
 		rows.Scan(&ac.ID, &ac.ColumnID, &ac.ColumnName, &ac.ColumnTypeName,
-			&ac.IconURL, &ac.Nickname, &ac.JumpURL, &ac.IsShow)
+			&ac.IconURL, &ac.Nickname, &ac.Content, &ac.JumpURL, &ac.IsShow,
+			&ac.ShareTitle, &ac.ShareIconURL, &ac.ShareURL, &ac.ShareDesc)
 
 		acs = append(acs, ac)
 	}
@@ -679,6 +798,11 @@ type ShortCutMenu struct {
 	IsNew        int    `json:"is_new"`
 	InReview     int    `json:"in_review"`
 	ProductClass string `json:"product_class"`
+
+	ShareTitle   string `json:"share_title"`
+	ShareIconURL string `json:"share_icon_url"`
+	ShareURL     string `json:"share_url"`
+	ShareDesc    string `json:"share_desc"`
 }
 
 // GetShortCutMenus 查询首页快捷菜单
@@ -687,9 +811,12 @@ func (h *Homepage) GetShortCutMenus() (scms []ShortCutMenu, err error) {
 	scms = make([]ShortCutMenu, 0)
 
 	querySQL := utils.SetSQLFormat(`
-		SELECT id, title,
-			icon_url, jump_url,
-			is_new, in_review, product_class  
+		SELECT id, title,icon_url, jump_url,
+			is_new, in_review, product_class,
+			IFNULL(share_title,''),
+			IFNULL(share_icon_url,''),
+			IFNULL(share_url,''),
+			IFNULL(share_desc,'')
 		FROM gpxj_app.t_homepage_product_menu
 		WHERE 1
 		`)
@@ -707,7 +834,9 @@ func (h *Homepage) GetShortCutMenus() (scms []ShortCutMenu, err error) {
 
 	for rows.Next() {
 		var scm ShortCutMenu
-		rows.Scan(&scm.ID, &scm.Title, &scm.IconURL, &scm.JumpURL, &scm.IsNew, &scm.InReview, &scm.ProductClass)
+		rows.Scan(&scm.ID, &scm.Title, &scm.IconURL, &scm.JumpURL,
+			&scm.IsNew, &scm.InReview, &scm.ProductClass,
+			&scm.ShareTitle, &scm.ShareIconURL, &scm.ShareURL, &scm.ShareDesc)
 
 		scms = append(scms, scm)
 	}
@@ -719,18 +848,113 @@ func (h *Homepage) GetShortCutMenus() (scms []ShortCutMenu, err error) {
 	return
 }
 
+// AddShortCutMenu 新增首页快捷菜单
+func (h *Homepage) AddShortCutMenu(scm ShortCutMenu) (id int64, err error) {
+
+	insertSQL := utils.SetSQLFormat(`
+	INSERT INTO gpxj_app.t_homepage_product_menu (
+		title,icon_url,jump_url,
+		share_title,share_desc,share_icon_url,share_url,
+		is_new,in_review,product_class) 
+	  VALUES
+		(
+		  '{0}','{1}','{2}',
+		  '{3}','{4}','{5}','{6}',
+		  '{7}','{8}','{9}');
+		`, scm.Title, scm.IconURL, scm.JumpURL,
+		scm.ShareTitle, scm.ShareDesc, scm.ShareIconURL, scm.ShareURL,
+		scm.IsNew, scm.InReview, scm.ProductClass)
+
+	glog.Info("insertSQL:", insertSQL)
+
+	rs, err := db.SQLDB.Exec(insertSQL)
+	if nil != err {
+		return
+	}
+
+	id, err = rs.LastInsertId()
+	if nil != err {
+		return
+	}
+
+	return
+}
+
+// ModifyShortCutMenu 修改首页快捷菜单
+func (h *Homepage) ModifyShortCutMenu(scm ShortCutMenu) (id int64, err error) {
+	updateSQL := utils.SetSQLFormat(`
+		UPDATE 
+			gpxj_app.t_homepage_product_menu 
+		SET
+			title = '{1}',
+			icon_url = '{2}',
+			jump_url = '{3}',
+			share_title = '{4}',
+			share_desc = '{5}',
+			share_icon_url = '{6}',
+			share_url = '{7}',
+			is_new = '{8}',
+			in_review = '{9}',
+			product_class = '{10}' 
+		WHERE id = '{0}';
+		`, scm.ID,
+		scm.Title, scm.IconURL, scm.JumpURL,
+		scm.ShareTitle, scm.ShareDesc, scm.ShareIconURL, scm.ShareURL,
+		scm.IsNew, scm.InReview, scm.ProductClass)
+
+	glog.Info("updateSQL:", updateSQL)
+
+	stmt, err := db.SQLDB.Prepare(updateSQL)
+	if nil != err {
+		return
+	}
+
+	rs, err := stmt.Exec()
+	if nil != err {
+		return
+	}
+
+	id, err = rs.RowsAffected()
+	if nil != err {
+		return
+	}
+
+	return
+}
+
+// DropShortCutMenu 删除首页快捷菜单
+func (h *Homepage) DropShortCutMenu(scm ShortCutMenu) (id int64, err error) {
+
+	deleteSQL := utils.SetSQLFormat(`DELETE FROM gpxj_app.t_homepage_product_menu WHERE id ='{0}'`, scm.ID)
+	glog.Info("deleteSQL:", deleteSQL)
+
+	rs, err := db.SQLDB.Exec(deleteSQL)
+	if nil != err {
+		return
+	}
+	id, err = rs.RowsAffected()
+	if nil != err {
+		return
+	}
+	return
+}
+
 // ProductClassify 产品分类
 type ProductClassify struct {
-	ID              int    `json:"id"`
-	ProductTypeName string `json:"product_type_name"`
-	ProductTypeDesc string `json:"product_type_desc"`
-	ProductClass    string `json:"product_class"`
-	SmallIconURL    string `json:"small_icon_url"`
-	ListIconURL     string `json:"list_icon_url"`
-	InnerJumpURL    string `json:"inner_jump_url"`
-	HasNew          int    `json:"has_new"`
-	InReview        int    `json:"in_review"`
-	IsShow          int    `json:"is_show"`
+	ID               int    `json:"id"`
+	ProductTypeName  string `json:"product_type_name"`
+	ProductTypeDesc  string `json:"product_type_desc"`
+	ProductClass     string `json:"product_class"`
+	SmallIconURL     string `json:"small_icon_url"`
+	ListIconURL      string `json:"list_icon_url"`
+	InnerJumpURL     string `json:"inner_jump_url"`
+	HasNew           int    `json:"has_new"`
+	InReview         int    `json:"in_review"`
+	IsShow           int    `json:"is_show"`
+	Sort             int    `json:"sort"`
+	ApplePayPID      string `json:"apple_pay_pid"`
+	ApplePayPrice    string `json:"apple_pay_price"`
+	ApplePayVIPPrice string `json:"apple_pay_vip_price"`
 }
 
 // GetProductClassifys 查询首页产品分类
@@ -741,7 +965,10 @@ func (h *Homepage) GetProductClassifys() (pcs []ProductClassify, err error) {
 		SELECT id,
 			product_type_name, product_type_desc, product_class,
 			small_icon_url, list_icon_url, inner_jump_url,
-			has_new,in_review, is_show 
+			has_new,in_review, is_show, sort,
+			IFNULL(apple_pay_pid,''),
+			IFNULL(apple_pay_price,''),
+			IFNULL(apple_pay_vip_price,'')
 		FROM gpxj_app.t_product_type 
 		WHERE 1
 	`)
@@ -760,7 +987,8 @@ func (h *Homepage) GetProductClassifys() (pcs []ProductClassify, err error) {
 		var pc ProductClassify
 		rows.Scan(&pc.ID, &pc.ProductTypeName, &pc.ProductTypeDesc, &pc.ProductClass,
 			&pc.SmallIconURL, &pc.ListIconURL, &pc.InnerJumpURL,
-			&pc.HasNew, &pc.InReview, &pc.IsShow)
+			&pc.HasNew, &pc.InReview, &pc.IsShow, &pc.Sort,
+			&pc.ApplePayPID, &pc.ApplePayPrice, &pc.ApplePayVIPPrice)
 
 		pcs = append(pcs, pc)
 	}
@@ -771,16 +999,120 @@ func (h *Homepage) GetProductClassifys() (pcs []ProductClassify, err error) {
 	return
 }
 
+// AddProductClassify 新增首页产品分类
+func (h *Homepage) AddProductClassify(pc ProductClassify) (id int64, err error) {
+
+	insertSQL := utils.SetSQLFormat(`
+		INSERT INTO gpxj_app.t_product_type (
+			product_type_name,product_type_desc,
+			small_icon_url,list_icon_url,inner_jump_url,
+			product_class,has_new,in_review,is_show,sort,
+			apple_pay_pid,apple_pay_price,apple_pay_vip_price
+		) 
+	 	 VALUES
+		(
+		  '{0}','{1}',
+		  '{2}','{3}','{4}',
+		  '{5}','{6}','{7}','{8}','{9}',
+		  '{10}','{11}','{12}') ;
+		`, pc.ProductTypeName, pc.ProductTypeDesc,
+		pc.SmallIconURL, pc.ListIconURL, pc.InnerJumpURL,
+		pc.ProductClass, pc.HasNew, pc.InReview, pc.IsShow, pc.Sort,
+		pc.ApplePayPID, pc.ApplePayPrice, pc.ApplePayVIPPrice)
+
+	glog.Info("insertSQL:", insertSQL)
+
+	rs, err := db.SQLDB.Exec(insertSQL)
+	if nil != err {
+		return
+	}
+
+	id, err = rs.LastInsertId()
+	if nil != err {
+		return
+	}
+
+	return
+}
+
+// ModifyProductClassify 修改首页产品分类
+func (h *Homepage) ModifyProductClassify(pc ProductClassify) (id int64, err error) {
+	updateSQL := utils.SetSQLFormat(`
+		UPDATE 
+			gpxj_app.t_product_type 
+		SET
+			product_type_name = '{1}',
+			product_type_desc = '{2}',
+			small_icon_url = '{3}',
+			list_icon_url = '{4}',
+			inner_jump_url = '{5}',
+			product_class = '{6}',
+			has_new = '{7}',
+			in_review = '{8}',
+			is_show = '{9}',
+			sort = '{10}',
+			apple_pay_pid = '{11}',
+			apple_pay_price = '{12}',
+			apple_pay_vip_price = '{13}'
+		WHERE id = '{0}' ;
+		`, pc.ID,
+		pc.ProductTypeName, pc.ProductTypeDesc,
+		pc.SmallIconURL, pc.ListIconURL, pc.InnerJumpURL,
+		pc.ProductClass, pc.HasNew, pc.InReview, pc.IsShow, pc.Sort,
+		pc.ApplePayPID, pc.ApplePayPrice, pc.ApplePayVIPPrice)
+
+	glog.Info("updateSQL:", updateSQL)
+
+	stmt, err := db.SQLDB.Prepare(updateSQL)
+	if nil != err {
+		return
+	}
+
+	rs, err := stmt.Exec()
+	if nil != err {
+		return
+	}
+
+	id, err = rs.RowsAffected()
+	if nil != err {
+		return
+	}
+
+	return
+}
+
+// DropProductClassify 删除首页产品分类
+func (h *Homepage) DropProductClassify(pc ProductClassify) (id int64, err error) {
+
+	deleteSQL := utils.SetSQLFormat(`DELETE FROM gpxj_app.t_product_type WHERE id ='{0}'`, pc.ID)
+	glog.Info("deleteSQL:", deleteSQL)
+
+	rs, err := db.SQLDB.Exec(deleteSQL)
+	if nil != err {
+		return
+	}
+	id, err = rs.RowsAffected()
+	if nil != err {
+		return
+	}
+	return
+}
+
 // ActivityMarketing 活动营销
 type ActivityMarketing struct {
-	ID           int    `json:"id"`
-	Title        string `json:"title"`
-	ImageURL     string `json:"image_url"`
-	IconURL      string `json:"icon_url"`
-	JumpURL      string `json:"jump_url"`
-	Uptime       string `json:"uptime"`
-	ActivityType int    `json:"activity_type"`
-	IsShow       int    `json:"is_show"`
+	ID            int    `json:"id"`
+	Title         string `json:"title"`
+	ImageURL      string `json:"image_url"`
+	IconURL       string `json:"icon_url"`
+	JumpURL       string `json:"jump_url"`
+	Uptime        string `json:"uptime"`
+	ActivityType  int    `json:"activity_type"`
+	IsShow        int    `json:"is_show"`
+	MarketingType string `json:"marketing_type"`
+	ShareTitle    string `json:"share_title"`
+	ShareIconURL  string `json:"share_icon_url"`
+	ShareURL      string `json:"share_url"`
+	ShareDesc     string `json:"share_desc"`
 }
 
 // GetActivityMarketings 查询活动营销
@@ -791,8 +1123,12 @@ func (h *Homepage) GetActivityMarketings(mType int) (ams []ActivityMarketing, er
 			IFNULL(image_url,""),
 			IFNULL(icon_url,""), 
 			IFNULL(jump_url,""),
-			uptime,activity_type,is_show
-		FROM t_activity_marketing
+			uptime,activity_type,is_show,
+			IFNULL(share_title,''),
+			IFNULL(share_icon_url,''),
+			IFNULL(share_url,''),
+			IFNULL(share_desc,'')
+		FROM gpxj_app.t_activity_marketing
 		WHERE 1
 	`)
 
@@ -816,7 +1152,8 @@ func (h *Homepage) GetActivityMarketings(mType int) (ams []ActivityMarketing, er
 	for rows.Next() {
 		var am ActivityMarketing
 		rows.Scan(&am.ID, &am.Title, &am.ImageURL, &am.IconURL, &am.JumpURL,
-			&am.Uptime, &am.ActivityType, &am.IsShow)
+			&am.Uptime, &am.ActivityType, &am.IsShow,
+			&am.ShareTitle, &am.ShareIconURL, &am.ShareURL, &am.ShareDesc)
 
 		ams = append(ams, am)
 	}
@@ -825,5 +1162,98 @@ func (h *Homepage) GetActivityMarketings(mType int) (ams []ActivityMarketing, er
 		return
 	}
 
+	return
+}
+
+// AddActivityMarketing 新增营销活动
+func (h *Homepage) AddActivityMarketing(am ActivityMarketing) (id int64, err error) {
+
+	insertSQL := utils.SetSQLFormat(`
+	INSERT INTO gpxj_app.t_activity_marketing (
+		title,image_url,icon_url,jump_url,
+		share_title,share_desc,share_icon_url,share_url,
+		uptime,activity_type,is_show,marketing_type) 
+	  VALUES
+		(
+		  '{0}','{1}','{2}','{3}',
+		  '{4}','{5}','{6}','{7}',
+		  '{8}','{9}','{10}','{11}') ;
+		`, am.Title, am.ImageURL, am.IconURL, am.JumpURL,
+		am.ShareTitle, am.ShareDesc, am.ShareIconURL, am.ShareURL,
+		am.Uptime, am.ActivityType, am.IsShow, am.MarketingType)
+
+	glog.Info("insertSQL:", insertSQL)
+
+	rs, err := db.SQLDB.Exec(insertSQL)
+	if nil != err {
+		return
+	}
+
+	id, err = rs.LastInsertId()
+	if nil != err {
+		return
+	}
+
+	return
+}
+
+// ModifyActivityMarketing 修改营销活动
+func (h *Homepage) ModifyActivityMarketing(am ActivityMarketing) (id int64, err error) {
+	updateSQL := utils.SetSQLFormat(`
+		UPDATE 
+			gpxj_app.t_activity_marketing 
+		SET
+			title = '{1}',
+			image_url = '{2}',
+			icon_url = '{3}',
+			jump_url = '{4}',
+			share_title = '{5}',
+			share_desc = '{6}',
+			share_icon_url = '{7}',
+			share_url = '{8}',
+			uptime = '{9}',
+			activity_type = '{10}',
+			is_show = '{11}',
+			marketing_type = '{12}' 
+		WHERE id = '{0}' ;
+		`, am.ID,
+		am.Title, am.ImageURL, am.IconURL, am.JumpURL,
+		am.ShareTitle, am.ShareDesc, am.ShareIconURL, am.ShareURL,
+		am.Uptime, am.ActivityType, am.IsShow, am.MarketingType)
+
+	glog.Info("updateSQL:", updateSQL)
+
+	stmt, err := db.SQLDB.Prepare(updateSQL)
+	if nil != err {
+		return
+	}
+
+	rs, err := stmt.Exec()
+	if nil != err {
+		return
+	}
+
+	id, err = rs.RowsAffected()
+	if nil != err {
+		return
+	}
+
+	return
+}
+
+// DropActivityMarketing 删除营销活动
+func (h *Homepage) DropActivityMarketing(am ActivityMarketing) (id int64, err error) {
+
+	deleteSQL := utils.SetSQLFormat(`DELETE FROM gpxj_app.t_activity_marketing WHERE id ='{0}'`, am.ID)
+	glog.Info("deleteSQL:", deleteSQL)
+
+	rs, err := db.SQLDB.Exec(deleteSQL)
+	if nil != err {
+		return
+	}
+	id, err = rs.RowsAffected()
+	if nil != err {
+		return
+	}
 	return
 }

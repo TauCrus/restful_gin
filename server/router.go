@@ -98,6 +98,7 @@ func initRouter() *gin.Engine {
 		cw.POST("/banner", AddBannerAPI)
 		cw.PUT("/banner", ModifyBannerAPI)
 		cw.DELETE("/banner", DropBannerAPI)
+
 		cw.GET("/bannerplace", GetBannerPlacesAPI)
 
 		cw.GET("/startpage", GetStartPagesAPI)
@@ -122,6 +123,8 @@ func initRouter() *gin.Engine {
 		hp.PUT("/column", ModifyColumnAPI)
 		hp.DELETE("/column", DropColumnAPI)
 
+		hp.GET("/columntype", GetColumnTypesAPI)
+
 		hp.GET("/productcolumn", GetProductColumnsAPI)
 		hp.POST("/productcolumn", AddProductColumnAPI)
 		hp.PUT("/productcolumn", ModifyProductColumnAPI)
@@ -138,10 +141,29 @@ func initRouter() *gin.Engine {
 		hp.DELETE("/articlecolumn", DropArticleColumnAPI)
 
 		hp.GET("/adcolumn", GetAdColumnsAPI)
+		hp.POST("/adcolumn", AddAdColumnAPI)
+		hp.PUT("/adcolumn", ModifyAdColumnAPI)
+		hp.DELETE("/adcolumn", DropAdColumnAPI)
+
 		hp.GET("/shortcutmenu", GetShortCutMenusAPI)
+		hp.POST("/shortcutmenu", AddShortCutMenuAPI)
+		hp.PUT("/shortcutmenu", ModifyShortCutMenuAPI)
+		hp.DELETE("/shortcutmenu", DropShortCutMenuAPI)
+
 		hp.GET("/productclassify", GetProductClassifysAPI)
+		hp.POST("/productclassify", AddProductClassifyAPI)
+		hp.PUT("/productclassify", ModifyProductClassifyAPI)
+		hp.DELETE("/productclassify", DropProductClassifyAPI)
+
 		hp.GET("/suspendad", GetSuspendAdsAPI)
+		hp.POST("/suspendad", AddActivityMarketingAPI)
+		hp.PUT("/suspendad", ModifyActivityMarketingAPI)
+		hp.DELETE("/suspendad", DropActivityMarketingAPI)
+
 		hp.GET("/popup", GetPopupsAPI)
+		hp.POST("/popup", AddActivityMarketingAPI)
+		hp.PUT("/popup", ModifyActivityMarketingAPI)
+		hp.DELETE("/popup", DropActivityMarketingAPI)
 
 	}
 
