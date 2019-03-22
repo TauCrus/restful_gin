@@ -33,3 +33,32 @@ func QueryUserRegistAPI(c *gin.Context) {
 		"result":  result,
 	})
 }
+
+// OrderResult 订单结果
+type OrderResult struct {
+	Data []models.Order `json:"data"`
+}
+
+//QueryOrdersAPI 获取订单
+func QueryOrdersAPI(c *gin.Context) {
+	startDate := c.Request.FormValue("start_date")
+	endDate := c.Request.FormValue("end_date")
+	orderID := c.Request.FormValue("order_id")
+	payWay := c.Request.FormValue("pay_way")
+	userid := c.Request.FormValue("userid")
+	productClass := c.Request.FormValue("product_class")
+
+	count := models.Count{}
+	orders, err := count.QueryOrders(startDate, endDate, orderID, payWay, userid, productClass)
+	if nil != err {
+		log.Fatalln(err)
+	}
+
+	result := OrderResult{Data: orders}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"result":  result,
+	})
+
+}

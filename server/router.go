@@ -59,7 +59,7 @@ func initRouter() *gin.Engine {
 		/**
 		*统计
 		 */
-		// 订单
+		// 查询订单
 		router.GET("/api/count/order", QueryOrdersAPI)
 		//用户注册
 		router.GET("/api/count/userregist", QueryUserRegistAPI)
