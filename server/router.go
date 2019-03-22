@@ -55,10 +55,15 @@ func initRouter() *gin.Engine {
 	 */
 	router.GET("/api/sys/review/query", SysReviewsQueryAPI)
 
-	/**
-	* 订单
-	 */
-	router.GET("/api/count/order", QueryOrdersAPI)
+	{
+		/**
+		*统计
+		 */
+		// 订单
+		router.GET("/api/count/order", QueryOrdersAPI)
+		//用户注册
+		router.GET("/api/count/userregist", QueryUserRegistAPI)
+	}
 
 	{
 		// 用户管理路由
