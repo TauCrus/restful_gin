@@ -629,6 +629,7 @@ type ArticleColumn struct {
 	ID             int    `json:"id"`
 	ColumnID       int    `json:"column_id"`
 	ColumnName     string `json:"column_name"`
+	ColumnTypeID   int    `json:"column_type_id"`
 	ColumnTypeName string `json:"column_type_name"`
 	IconURL        string `json:"icon_url"`
 	Nickname       string `json:"nickname"`
@@ -643,7 +644,7 @@ type ArticleColumn struct {
 }
 
 // GetArticleColumns 查询首页文章栏目
-func (h *Homepage) GetArticleColumns() (acs []ArticleColumn, err error) {
+func (h *Homepage) GetArticleColumns(columnID, status string) (acs []ArticleColumn, err error) {
 
 	acs = make([]ArticleColumn, 0)
 
@@ -652,6 +653,7 @@ func (h *Homepage) GetArticleColumns() (acs []ArticleColumn, err error) {
 			ha.id,
 			ha.column_id ,
 			c.column_name,
+			c.column_type_id,
 			c.column_type_name,
 			ha.icon_url ,
 			ha.nickname,
@@ -667,6 +669,18 @@ func (h *Homepage) GetArticleColumns() (acs []ArticleColumn, err error) {
 		WHERE 1
 	`)
 
+	if "0" != columnID {
+		querySQL = utils.SetSQLFormat(`{0} AND ha.column_id = '{1}'`, querySQL, columnID)
+	}
+
+	if "" != status {
+		if "1" == status {
+			querySQL = utils.SetSQLFormat(`{0} AND ha.is_show = 1`, querySQL)
+		} else if "2" == status {
+			querySQL = utils.SetSQLFormat(`{0} AND ha.is_show = 0`, querySQL)
+		}
+	}
+
 	querySQL = utils.SetSQLFormat(`{0} ORDER BY id DESC`, querySQL)
 
 	log.Println("querySQL:", querySQL)
@@ -679,7 +693,7 @@ func (h *Homepage) GetArticleColumns() (acs []ArticleColumn, err error) {
 	}
 	for rows.Next() {
 		var ac ArticleColumn
-		rows.Scan(&ac.ID, &ac.ColumnID, &ac.ColumnName, &ac.ColumnTypeName,
+		rows.Scan(&ac.ID, &ac.ColumnID, &ac.ColumnName, &ac.ColumnTypeID, &ac.ColumnTypeName,
 			&ac.IconURL, &ac.Nickname, &ac.Content, &ac.JumpURL, &ac.IsShow,
 			&ac.ShareTitle, &ac.ShareIconURL, &ac.ShareURL, &ac.ShareDesc)
 

@@ -349,8 +349,10 @@ type GetArticleColumnsResult struct {
 
 // GetArticleColumnsAPI 查询首页文章栏目接口
 func GetArticleColumnsAPI(c *gin.Context) {
+	columnID := c.Request.FormValue("column_id")
+	status := c.Request.FormValue("status")
 	hp := models.Homepage{}
-	acs, err := hp.GetArticleColumns()
+	acs, err := hp.GetArticleColumns(columnID,status)
 	if nil != err {
 		log.Fatalln(err)
 	}
