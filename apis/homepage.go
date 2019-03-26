@@ -352,7 +352,7 @@ func GetArticleColumnsAPI(c *gin.Context) {
 	columnID := c.Request.FormValue("column_id")
 	status := c.Request.FormValue("status")
 	hp := models.Homepage{}
-	acs, err := hp.GetArticleColumns(columnID,status)
+	acs, err := hp.GetArticleColumns(columnID, status)
 	if nil != err {
 		log.Fatalln(err)
 	}
@@ -549,8 +549,11 @@ type GetShortCutMenusResult struct {
 
 // GetShortCutMenusAPI 查询首页快捷菜单接口
 func GetShortCutMenusAPI(c *gin.Context) {
+	keyword := c.Request.FormValue("keyword")
+	status := c.Request.FormValue("status")
+
 	hp := models.Homepage{}
-	scms, err := hp.GetShortCutMenus()
+	scms, err := hp.GetShortCutMenus(keyword, status)
 	if nil != err {
 		log.Fatalln(err)
 	}
@@ -648,8 +651,11 @@ type GetProductClassifyResult struct {
 
 // GetProductClassifysAPI 查询首页产品分类接口
 func GetProductClassifysAPI(c *gin.Context) {
+	keyword := c.Request.FormValue("keyword")
+	status := c.Request.FormValue("status")
+
 	hp := models.Homepage{}
-	pcs, err := hp.GetProductClassifys()
+	pcs, err := hp.GetProductClassifys(keyword, status)
 	if nil != err {
 		log.Fatalln(err)
 	}
@@ -747,8 +753,11 @@ type GetActivityMarketingResult struct {
 
 // GetSuspendAdsAPI 查询悬浮广告接口
 func GetSuspendAdsAPI(c *gin.Context) {
+	keyword := c.Request.FormValue("keyword")
+	status := c.Request.FormValue("status")
+
 	hp := models.Homepage{}
-	ams, err := hp.GetActivityMarketings(1)
+	ams, err := hp.GetActivityMarketings(1, keyword, status)
 	if nil != err {
 		log.Fatalln(err)
 	}
@@ -763,8 +772,10 @@ func GetSuspendAdsAPI(c *gin.Context) {
 
 // GetPopupsAPI 查询营销弹窗接口
 func GetPopupsAPI(c *gin.Context) {
+	keyword := c.Request.FormValue("keyword")
+	status := c.Request.FormValue("status")
 	hp := models.Homepage{}
-	ams, err := hp.GetActivityMarketings(2)
+	ams, err := hp.GetActivityMarketings(2, keyword, status)
 	if nil != err {
 		log.Fatalln(err)
 	}

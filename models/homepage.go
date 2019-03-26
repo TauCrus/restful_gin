@@ -820,7 +820,7 @@ type ShortCutMenu struct {
 }
 
 // GetShortCutMenus 查询首页快捷菜单
-func (h *Homepage) GetShortCutMenus() (scms []ShortCutMenu, err error) {
+func (h *Homepage) GetShortCutMenus(keyword, status string) (scms []ShortCutMenu, err error) {
 
 	scms = make([]ShortCutMenu, 0)
 
@@ -834,6 +834,18 @@ func (h *Homepage) GetShortCutMenus() (scms []ShortCutMenu, err error) {
 		FROM gpxj_app.t_homepage_product_menu
 		WHERE 1
 		`)
+
+	if "" != keyword {
+		querySQL = utils.SetSQLFormat(`{0} AND title like '%{1}%'`, querySQL, keyword)
+	}
+
+	if "" != status {
+		if "1" == status {
+			querySQL = utils.SetSQLFormat(`{0} AND in_review = 1`, querySQL)
+		} else if "2" == status {
+			querySQL = utils.SetSQLFormat(`{0} AND is_new = 1`, querySQL)
+		}
+	}
 
 	querySQL = utils.SetSQLFormat(`{0} ORDER BY id DESC`, querySQL)
 
@@ -972,13 +984,15 @@ type ProductClassify struct {
 }
 
 // GetProductClassifys 查询首页产品分类
-func (h *Homepage) GetProductClassifys() (pcs []ProductClassify, err error) {
+func (h *Homepage) GetProductClassifys(keyword, status string) (pcs []ProductClassify, err error) {
 	pcs = make([]ProductClassify, 0)
 
 	querySQL := utils.SetSQLFormat(`
 		SELECT id,
 			product_type_name, product_type_desc, product_class,
-			small_icon_url, list_icon_url, inner_jump_url,
+			IFNULL(small_icon_url,""),
+			IFNULL(list_icon_url,""), 
+			IFNULL(inner_jump_url,""),
 			has_new,in_review, is_show, sort,
 			IFNULL(apple_pay_pid,''),
 			IFNULL(apple_pay_price,''),
@@ -986,6 +1000,20 @@ func (h *Homepage) GetProductClassifys() (pcs []ProductClassify, err error) {
 		FROM gpxj_app.t_product_type 
 		WHERE 1
 	`)
+
+	if "" != keyword {
+		querySQL = utils.SetSQLFormat(`{0} AND CONCAT(product_type_name,product_type_desc,product_class) like '%{1}%'`, querySQL, keyword)
+	}
+
+	if "" != status {
+		if "1" == status {
+			querySQL = utils.SetSQLFormat(`{0} AND is_show = 1`, querySQL)
+		} else if "2" == status {
+			querySQL = utils.SetSQLFormat(`{0} AND is_show = 0`, querySQL)
+		} else if "3" == status {
+			querySQL = utils.SetSQLFormat(`{0} AND in_review = 1`, querySQL)
+		}
+	}
 
 	querySQL = utils.SetSQLFormat(`{0} ORDER BY id DESC`, querySQL)
 
@@ -1130,7 +1158,7 @@ type ActivityMarketing struct {
 }
 
 // GetActivityMarketings 查询活动营销
-func (h *Homepage) GetActivityMarketings(mType int) (ams []ActivityMarketing, err error) {
+func (h *Homepage) GetActivityMarketings(mType int, keyword, status string) (ams []ActivityMarketing, err error) {
 	ams = make([]ActivityMarketing, 0)
 	querySQL := utils.SetSQLFormat(`
 		SELECT id,title,
@@ -1150,6 +1178,18 @@ func (h *Homepage) GetActivityMarketings(mType int) (ams []ActivityMarketing, er
 		querySQL = utils.SetSQLFormat(`{0} AND marketing_type = 'suspension'`, querySQL)
 	} else if 2 == mType {
 		querySQL = utils.SetSQLFormat(`{0} AND marketing_type = 'popups'`, querySQL)
+	}
+
+	if "" != keyword {
+		querySQL = utils.SetSQLFormat(`{0} AND title like '%{1}%'`, querySQL, keyword)
+	}
+
+	if "" != status {
+		if "1" == status {
+			querySQL = utils.SetSQLFormat(`{0} AND is_show = 1`, querySQL)
+		} else if "2" == status {
+			querySQL = utils.SetSQLFormat(`{0} AND is_show = 0`, querySQL)
+		}
 	}
 
 	querySQL = utils.SetSQLFormat(`{0} ORDER BY id DESC`, querySQL)
