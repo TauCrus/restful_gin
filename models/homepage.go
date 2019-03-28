@@ -1158,7 +1158,7 @@ type ActivityMarketing struct {
 }
 
 // GetActivityMarketings 查询活动营销
-func (h *Homepage) GetActivityMarketings(mType int, keyword, status string) (ams []ActivityMarketing, err error) {
+func (h *Homepage) GetActivityMarketings(mType int, activityType, keyword, status string) (ams []ActivityMarketing, err error) {
 	ams = make([]ActivityMarketing, 0)
 	querySQL := utils.SetSQLFormat(`
 		SELECT id,title,
@@ -1178,6 +1178,10 @@ func (h *Homepage) GetActivityMarketings(mType int, keyword, status string) (ams
 		querySQL = utils.SetSQLFormat(`{0} AND marketing_type = 'suspension'`, querySQL)
 	} else if 2 == mType {
 		querySQL = utils.SetSQLFormat(`{0} AND marketing_type = 'popups'`, querySQL)
+	}
+
+	if "" != activityType {
+		querySQL = utils.SetSQLFormat(`{0} AND activity_type ='{1}'`, querySQL, activityType)
 	}
 
 	if "" != keyword {

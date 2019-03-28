@@ -753,11 +753,12 @@ type GetActivityMarketingResult struct {
 
 // GetSuspendAdsAPI 查询悬浮广告接口
 func GetSuspendAdsAPI(c *gin.Context) {
+	activityType := c.Request.FormValue("activity_type")
 	keyword := c.Request.FormValue("keyword")
 	status := c.Request.FormValue("status")
 
 	hp := models.Homepage{}
-	ams, err := hp.GetActivityMarketings(1, keyword, status)
+	ams, err := hp.GetActivityMarketings(1, activityType, keyword, status)
 	if nil != err {
 		log.Fatalln(err)
 	}
@@ -772,10 +773,11 @@ func GetSuspendAdsAPI(c *gin.Context) {
 
 // GetPopupsAPI 查询营销弹窗接口
 func GetPopupsAPI(c *gin.Context) {
+	activityType := c.Request.FormValue("activity_type")
 	keyword := c.Request.FormValue("keyword")
 	status := c.Request.FormValue("status")
 	hp := models.Homepage{}
-	ams, err := hp.GetActivityMarketings(2, keyword, status)
+	ams, err := hp.GetActivityMarketings(2, activityType, keyword, status)
 	if nil != err {
 		log.Fatalln(err)
 	}
