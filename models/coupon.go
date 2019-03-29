@@ -12,7 +12,6 @@ type Coupon struct {
 
 // CouponData 优惠券数据
 type CouponData struct {
-	ID         string  `json:"id"`
 	CouponID   int     `json:"coupon_id"`
 	CouponName string  `json:"coupon_name"`
 	CouponDesc string  `json:"coupon_desc"`
@@ -31,13 +30,12 @@ type CouponData struct {
 }
 
 // GetCoupons 查询优惠券
-func (c *Coupon) GetCoupons() (cdList []CouponData, err error) {
+func (c *Coupon) GetCoupons(keyword, couponID, couponType, status string) (cdList []CouponData, err error) {
 
 	cdList = make([]CouponData, 0)
 
 	querySQL := utils.SetSQLFormat(`
 		SELECT 
-			c.id,
 			c.coupon_id,
 			c.coupon_name,
 			c.coupon_desc,
@@ -51,12 +49,31 @@ func (c *Coupon) GetCoupons() (cdList []CouponData, err error) {
 			c.exp_type,
 			c.exp_add_days ,
 			IFNULL(c.exp_end_date,""),
-			c.discount * 10,
+			ROUND(c.discount * 10),
 			IFNULL(caa.activity,"")
 		FROM t_coupons c
-		LEFT JOIN (SELECT coupon_id AS cid, activity FROM gpxj_app.t_coupon_activity_available) caa ON c.coupon_id = caa.cid
+		LEFT JOIN t_coupon_activity_available caa ON c.coupon_id = caa.coupon_id
 		WHERE 1
 	`)
+
+	if "" != keyword {
+		querySQL = utils.SetSQLFormat(`{0} AND (c.coupon_name like '%{1}%' OR c.coupon_desc like '%{1}%' )`, querySQL, keyword)
+	}
+	if "" != couponID {
+		querySQL = utils.SetSQLFormat(`{0} AND c.coupon_id = '{1}'`, querySQL, couponID)
+	}
+
+	if "" != couponType {
+		querySQL = utils.SetSQLFormat(`{0} AND c.type = '{1}'`, querySQL, couponType)
+	}
+
+	if "" != status {
+		if "1" == status {
+			querySQL = utils.SetSQLFormat(`{0} AND c.enable = 1`, querySQL)
+		} else if "2" == status {
+			querySQL = utils.SetSQLFormat(`{0} AND c.enable = 0`, querySQL)
+		}
+	}
 
 	querySQL = utils.SetSQLFormat(`{0} ORDER BY c.id  DESC`, querySQL)
 
@@ -71,7 +88,7 @@ func (c *Coupon) GetCoupons() (cdList []CouponData, err error) {
 
 	for rows.Next() {
 		var cd CouponData
-		rows.Scan(&cd.ID, &cd.CouponID, &cd.CouponName, &cd.CouponDesc,
+		rows.Scan(&cd.CouponID, &cd.CouponName, &cd.CouponDesc,
 			&cd.Type, &cd.Enable, &cd.DaysAdd, &cd.AmountSub, &cd.MinPayment,
 			&cd.StartTime, &cd.EndTime, &cd.ExpType, &cd.ExpAddDays, &cd.ExpEndDate,
 			&cd.Discount, &cd.Activity)

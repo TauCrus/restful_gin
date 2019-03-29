@@ -6,6 +6,7 @@ import (
 	"restful_gin/models"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang/glog"
 )
 
 // Permission 权限
@@ -27,14 +28,15 @@ type Error struct {
 	Message string `json:"message"`
 }
 
-// UserInfoAPI 用户信息接口
-func UserInfoAPI(c *gin.Context) {
+// GetUserInfoAPI 用户信息接口
+func GetUserInfoAPI(c *gin.Context) {
 	var (
 		roles, permissions []string
 	)
 
 	roles = []string{"admin"}
-	permissions = []string{"/index", "/table", "/forms/base", "/forms/edit",
+	permissions = []string{
+		"/index", "/table", "/forms/base", "/forms/edit",
 		"/user/password", "/about", "/sys/user/list", "/sys/review/list",
 		"/count/order/list", "/count/regist/list",
 		"/user/manage/list", "/user/service/list", "/user/feedback/list",
@@ -72,6 +74,12 @@ func UserInfoAPI(c *gin.Context) {
 	})
 }
 
+// UserLoginParam 用户登录参数
+type UserLoginParam struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
 // UserLoginResult 用户登录结果
 type UserLoginResult struct {
 	Token string `json:"token"`
@@ -79,11 +87,30 @@ type UserLoginResult struct {
 
 // UserLoginAPI 用户登录接口
 func UserLoginAPI(c *gin.Context) {
-	result := UserLoginResult{Token: "12138"}
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"result":  result,
-	})
+
+	param := UserLoginParam{}
+	err := c.Bind(&param)
+	if nil != err {
+		glog.Error(err)
+	}
+	glog.Info("param:", param)
+
+	cnt, err := new(models.User).UserLogin(param.Username, param.Password)
+
+	if cnt > 0 {
+		result := UserLoginResult{Token: "12138"}
+		c.JSON(http.StatusOK, gin.H{
+			"success": true,
+			"result":  result,
+		})
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"result":  nil,
+			"error":   Error{Code: 10001, Message: "登录失败"},
+		})
+	}
+
 }
 
 //UserLogoutResult 用户注销结果

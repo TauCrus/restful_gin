@@ -15,7 +15,13 @@ type GetCouponsResult struct {
 
 // GetCouponsAPI 查询优惠券接口
 func GetCouponsAPI(c *gin.Context) {
-	cdList, err := new(models.Coupon).GetCoupons()
+
+	keyword := c.Request.FormValue("keyword")
+	couponID := c.Request.FormValue("coupon_id")
+	couponType := c.Request.FormValue("type")
+	status := c.Request.FormValue("status")
+
+	cdList, err := new(models.Coupon).GetCoupons(keyword, couponID, couponType, status)
 	if nil != err {
 		log.Fatalln(err)
 	}

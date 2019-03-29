@@ -1,6 +1,9 @@
 package models
 
-import db "restful_gin/database"
+import (
+	db "restful_gin/database"
+	"restful_gin/utils"
+)
 
 // AdminUser 系统用户
 type AdminUser struct {
@@ -79,5 +82,32 @@ func (u *User) GetUsers() (users []User, err error) {
 	if err = rows.Err(); nil != err {
 		return
 	}
+	return
+}
+
+// UserLogin 用户登录
+func (u *User) UserLogin(username, password string) (cnt int, err error) {
+
+	querySQL := utils.SetSQLFormat(`
+	SELECT COUNT(1)
+	FROM gpxj_app.t_back_user
+	WHERE username = '{0}' AND password = '{1}' 
+	`, username, password)
+
+	err = db.SQLDB.QueryRow(querySQL).Scan(&cnt)
+	if nil != err {
+		return
+	}
+
+	return
+}
+
+// GetUserInfo 获取用户信息
+func (u *User) GetUserInfo(token string) (roles, permissions []string, err error) {
+
+	// querySQL := utils.SetSQLFormat(`
+
+	// `)
+
 	return
 }

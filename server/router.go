@@ -41,7 +41,7 @@ func initRouter() *gin.Engine {
 
 		user.POST("/register", UserRegisterAPI)
 
-		user.GET("/info", UserInfoAPI)
+		user.GET("/info", GetUserInfoAPI)
 
 		user.POST("/changePassword", UserChangePwdAPI)
 	}
