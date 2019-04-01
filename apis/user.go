@@ -4,7 +4,10 @@ import (
 	"log"
 	"net/http"
 	"restful_gin/models"
+	"restful_gin/utils"
+	"time"
 
+	jwtgo "github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"github.com/golang/glog"
 )
@@ -98,11 +101,8 @@ func UserLoginAPI(c *gin.Context) {
 	cnt, err := new(models.User).UserLogin(param.Username, param.Password)
 
 	if cnt > 0 {
-		result := UserLoginResult{Token: "12138"}
-		c.JSON(http.StatusOK, gin.H{
-			"success": true,
-			"result":  result,
-		})
+		generateToken(c, param)
+
 	} else {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
@@ -111,6 +111,40 @@ func UserLoginAPI(c *gin.Context) {
 		})
 	}
 
+}
+
+// generateToken 生成令牌 token
+func generateToken(c *gin.Context, param UserLoginParam) {
+	j := &utils.JWT{
+		[]byte("gpztxy"),
+	}
+
+	claims := utils.CustomClaims{
+		param.Username,
+		jwtgo.StandardClaims{
+			NotBefore: int64(time.Now().Unix() - 1000), // 签名生效时间
+			ExpiresAt: int64(time.Now().Unix() + 3600), // 过期时间 一小时
+			Issuer:    "gpztxy",                        //签名的发行者
+		},
+	}
+	token, err := j.CreateToken(claims)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"status": -1,
+			"msg":    err.Error(),
+		})
+		return
+	}
+
+	glog.Info("token:", token)
+
+	result := UserLoginResult{Token: token}
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"result":  result,
+	})
+
+	return
 }
 
 //UserLogoutResult 用户注销结果

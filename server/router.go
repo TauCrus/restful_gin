@@ -2,6 +2,8 @@ package main
 
 import (
 	. "restful_gin/apis"
+	"restful_gin/utils"
+	"time"
 
 	"github.com/gin-contrib/cors"
 
@@ -11,7 +13,14 @@ import (
 func initRouter() *gin.Engine {
 	router := gin.Default()
 	// 处理跨域问题
-	router.Use(cors.Default())
+	// router.Use(cors.Default())
+	router.Use(cors.New(cors.Config{
+		AllowOriginFunc:  func(origin string) bool { return true },
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "PATCH"},
+		AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type", "Authorization"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
 	/**
 	* 测试用例
 	 */
@@ -41,10 +50,17 @@ func initRouter() *gin.Engine {
 
 		user.POST("/register", UserRegisterAPI)
 
-		user.GET("/info", GetUserInfoAPI)
-
 		user.POST("/changePassword", UserChangePwdAPI)
 	}
+
+	//用户权限
+	{
+		auth := router.Group("api/auth")
+		auth.Use(utils.JWTAuth())
+
+		auth.GET("/info", GetUserInfoAPI)
+	}
+
 	/**
 	*管理用户接口
 	 */

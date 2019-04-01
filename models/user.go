@@ -105,7 +105,7 @@ func (u *User) UserLogin(username, password string) (cnt int, err error) {
 // GetUserInfo 获取用户信息
 func (u *User) GetUserInfo(token string) (roles, permissions []string, err error) {
 
-	// querySQL := utils.SetSQLFormat(`
+	// queryRoleSQL := utils.SetSQLFormat(`
 
 	// `)
 
