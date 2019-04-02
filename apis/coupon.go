@@ -33,6 +33,31 @@ func GetCouponsAPI(c *gin.Context) {
 	})
 }
 
+// GetGpxjCouponsResult 查询股票先机优惠券结果
+type GetGpxjCouponsResult struct {
+	Data []models.GpxjCouponData `json:"data"`
+}
+
+// GetGpxjCouponsAPI 查询股票先机优惠券接口
+func GetGpxjCouponsAPI(c *gin.Context) {
+
+	keyword := c.Request.FormValue("keyword")
+	couponID := c.Request.FormValue("coupon_id")
+	couponType := c.Request.FormValue("type")
+	status := c.Request.FormValue("status")
+
+	cdList, err := new(models.Coupon).GetGpxjCoupons(keyword, couponID, couponType, status)
+	if nil != err {
+		log.Fatalln(err)
+	}
+
+	result := GetGpxjCouponsResult{Data: cdList}
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"result":  result,
+	})
+}
+
 // GetCouponRecordResult 优惠券领取记录结果
 type GetCouponRecordResult struct {
 	Data []models.CouponRecord `json:"data"`
