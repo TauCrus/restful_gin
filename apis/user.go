@@ -1,6 +1,7 @@
 package apis
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 	"restful_gin/models"
@@ -25,56 +26,80 @@ type UserInfo struct {
 	Permissions []Permission `json:"permissions"`
 }
 
-// Error 错误信息
-type Error struct {
-	Code    int    `json:"code"`
-	Message string `json:"message"`
-}
-
 // GetUserInfoAPI 用户信息接口
 func GetUserInfoAPI(c *gin.Context) {
-	var (
-		roles, permissions []string
-	)
 
-	roles = []string{"admin"}
-	permissions = []string{
-		"/index", "/table", "/forms/base", "/forms/edit",
-		"/user/password", "/about", "/sys/user/list", "/sys/review/list",
-		"/count/order/list", "/count/regist/list",
-		"/user/manage/list", "/user/service/list", "/user/feedback/list",
-		"/coupon/manage/list", "/coupon/activity/list", "/coupon/record/list",
-		"/product/manage/list", "/product/price/list", "/product/package/list", "/product/recommend/list",
-		"/content/copywriter",
-		"/content/copywriter/banner/list",
-		"/content/copywriter/startpage/list",
-		"/content/copywriter/searchrecommend/list",
-		"/content/copywriter/marketinglabel/list",
-		"/content/homepage",
-		"/content/homepage/column/list",
-		"/content/homepage/productcolumn/list",
-		"/content/homepage/spcolumn/list",
-		"/content/homepage/articlecolumn/list",
-		"/content/homepage/adcolumn/list",
-		"/content/homepage/shortcutmenu/list",
-		"/content/homepage/productclassify/list",
-		"/content/homepage/suspendad/list",
-		"/content/homepage/popup/list"}
+	username := getUsernameFromToken(c)
+	glog.Info("username:", username)
+	roles, permissions, err := new(models.User).GetUserInfo(username)
+	if nil != err {
+		glog.Info(err)
+	}
+	/*
+		var (
+			roles, permissions []string
+		)
 
-	var userinfo = UserInfo{ID: "12138", Name: "spring", Roles: roles}
+		roles = []string{"admin"}
+		permissions = []string{
+			"/index", "/table", "/forms/base", "/forms/edit",
+			"/user/password", "/about", "/sys/user/list", "/sys/review/list",
+			"/count/order/list", "/count/regist/list",
+			"/user/manage/list", "/user/service/list", "/user/feedback/list",
+			"/coupon/manage/list", "/coupon/activity/list", "/coupon/record/list",
+			"/product/manage/list", "/product/price/list", "/product/package/list", "/product/recommend/list",
+			"/content/copywriter",
+			"/content/copywriter/banner/list",
+			"/content/copywriter/startpage/list",
+			"/content/copywriter/searchrecommend/list",
+			"/content/copywriter/marketinglabel/list",
+			"/content/homepage",
+			"/content/homepage/column/list",
+			"/content/homepage/productcolumn/list",
+			"/content/homepage/spcolumn/list",
+			"/content/homepage/articlecolumn/list",
+			"/content/homepage/adcolumn/list",
+			"/content/homepage/shortcutmenu/list",
+			"/content/homepage/productclassify/list",
+			"/content/homepage/suspendad/list",
+			"/content/homepage/popup/list"}
 
+	*/
+	var userinfo = UserInfo{ID: "12138", Name: username, Roles: roles}
+	if len(permissions) == 0 {
+		permissions = []string{"/index", "/table", "/forms/base", "/forms/edit", "/user/password", "/about"}
+	}
 	for _, v := range permissions {
 		var p Permission
 		p.Path = v
 		userinfo.Permissions = append(userinfo.Permissions, p)
 	}
 
-	err := Error{Code: 100000, Message: "无效的token"}
+	// err := Error{Code: 100000, Message: "无效的token"}
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"result":  userinfo,
-		"error":   err,
+		// "error":   err,
 	})
+}
+
+// 从token种获取用户名
+func getUsernameFromToken(c *gin.Context) string {
+	claims, _ := c.Get("claims")
+	// glog.Info("claims:", claims)
+
+	tmp, err := json.Marshal(claims)
+	if nil != err {
+		glog.Error(err)
+	}
+
+	cc := &utils.CustomClaims{}
+	err = json.Unmarshal(tmp, &cc)
+	if nil != err {
+		glog.Error(err)
+	}
+
+	return cc.Username
 }
 
 // UserLoginParam 用户登录参数
@@ -106,8 +131,8 @@ func UserLoginAPI(c *gin.Context) {
 	} else {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
-			"result":  nil,
-			"error":   Error{Code: 10001, Message: "登录失败"},
+			"result":  "用户名或者密码错误",
+			"error":   utils.Error{Code: 10001, Message: "登录失败"},
 		})
 	}
 
@@ -118,20 +143,19 @@ func generateToken(c *gin.Context, param UserLoginParam) {
 	j := &utils.JWT{
 		[]byte("gpztxy"),
 	}
-
 	claims := utils.CustomClaims{
 		param.Username,
 		jwtgo.StandardClaims{
-			NotBefore: int64(time.Now().Unix() - 1000), // 签名生效时间
-			ExpiresAt: int64(time.Now().Unix() + 3600), // 过期时间 一小时
-			Issuer:    "gpztxy",                        //签名的发行者
+			NotBefore: int64(time.Now().Unix() - 1000),  // 签名生效时间
+			ExpiresAt: int64(time.Now().Unix() + 60*60), // 过期时间 一小时
+			Issuer:    "gpztxy",                         //签名的发行者
 		},
 	}
 	token, err := j.CreateToken(claims)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
-			"status": -1,
-			"msg":    err.Error(),
+			"success": false,
+			"error":   utils.Error{Code: -1, Message: err.Error()},
 		})
 		return
 	}

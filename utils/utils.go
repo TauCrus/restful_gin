@@ -18,3 +18,9 @@ func SetSQLFormat(fsql string, args ...interface{}) string {
 
 	return sql
 }
+
+// Error 错误信息
+type Error struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+}

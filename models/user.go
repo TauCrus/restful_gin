@@ -1,8 +1,11 @@
 package models
 
 import (
+	"database/sql"
 	db "restful_gin/database"
 	"restful_gin/utils"
+
+	"github.com/golang/glog"
 )
 
 // AdminUser 系统用户
@@ -103,11 +106,86 @@ func (u *User) UserLogin(username, password string) (cnt int, err error) {
 }
 
 // GetUserInfo 获取用户信息
-func (u *User) GetUserInfo(token string) (roles, permissions []string, err error) {
+func (u *User) GetUserInfo(username string) (roles, permissions []string, err error) {
 
-	// queryRoleSQL := utils.SetSQLFormat(`
+	roles, err = getUserRoles(username)
+	if nil != err {
+		return
+	}
 
-	// `)
+	permissions, err = getUserPermissions(username)
+	if nil != err {
+		return
+	}
+
+	return
+}
+
+// 获取用户角色
+func getUserRoles(username string) (roles []string, err error) {
+	querySQL := utils.SetSQLFormat(`
+		SELECT br.code
+		FROM gpxj_app.t_back_role br 
+		LEFT JOIN gpxj_app.t_back_user_role bur ON br.id = bur.role_id
+		LEFT JOIN gpxj_app.t_back_user bu ON bur.user_id = bu.id
+		WHERE bu.username = '{0}'
+		`, username)
+
+	glog.Info("querySQL:", querySQL)
+	rows, err := db.SQLDB.Query(querySQL)
+	if nil != err {
+		if err != sql.ErrNoRows {
+			return
+		}
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var role string
+		rows.Scan(&role)
+
+		roles = append(roles, role)
+	}
+
+	if err = rows.Err(); nil != err {
+		return
+	}
+
+	return
+}
+
+// 获取用户权限
+func getUserPermissions(username string) (permissions []string, err error) {
+	querySQL := utils.SetSQLFormat(`
+		SELECT bm.url	
+		FROM gpxj_app.t_back_menu bm
+		LEFT JOIN gpxj_app.t_back_role_menu brm ON bm.id = brm.menu_id
+		LEFT JOIN gpxj_app.t_back_user_role bur ON brm.role_id = bur.role_id
+		LEFT JOIN gpxj_app.t_back_user bu ON bur.user_id = bu.id
+		WHERE bu.username = '{0}'
+		GROUP BY bm.url
+		ORDER BY bm.sort
+		`, username)
+
+	glog.Info("querySQL:", querySQL)
+	rows, err := db.SQLDB.Query(querySQL)
+	if nil != err {
+		if err != sql.ErrNoRows {
+			return
+		}
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var tmp string
+		rows.Scan(&tmp)
+
+		permissions = append(permissions, tmp)
+	}
+
+	if err = rows.Err(); nil != err {
+		return
+	}
 
 	return
 }

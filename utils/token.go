@@ -13,11 +13,11 @@ import (
 // JWTAuth 中间件 检查 token
 func JWTAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		token := c.Request.Header.Get("token")
+		token := c.Request.Header.Get("Authorization")
 		if "" == token {
 			c.JSON(http.StatusOK, gin.H{
-				"status": -1,
-				"msg":    "请求未携带token，无权限访问",
+				"success": false,
+				"error":   Error{Code: -1, Message: "请求未携带token，无权限访问"},
 			})
 			c.Abort()
 			return
@@ -32,15 +32,15 @@ func JWTAuth() gin.HandlerFunc {
 		if nil != err {
 			if ErrTokenExpired == err {
 				c.JSON(http.StatusOK, gin.H{
-					"status": -1,
-					"msg":    "授权已过期",
+					"success": false,
+					"error":   Error{Code: 100000, Message: "授权已过期"},
 				})
 				c.Abort()
 				return
 			}
 			c.JSON(http.StatusOK, gin.H{
-				"status": -1,
-				"msg":    err.Error(),
+				"success": false,
+				"error":   Error{Code: -1, Message: err.Error()},
 			})
 			c.Abort()
 			return
@@ -61,7 +61,7 @@ var (
 	ErrTokenNotValidYet error  = errors.New("Token not active yet")
 	ErrTokenMalformed   error  = errors.New("That's not even a token")
 	ErrTokenInvalid     error  = errors.New("Couldn't handle this token:")
-	SignKey             string = "newtrekWang"
+	SignKey             string = "gpztxy"
 )
 
 // CustomClaims 载荷，可以加一些自己需要的信息
@@ -138,3 +138,5 @@ func (j *JWT) RefreshToken(tokenString string) (string, error) {
 
 	return "", ErrTokenInvalid
 }
+
+
