@@ -265,7 +265,7 @@ func (c *Coupon) GetGpxjCoupons(keyword, couponID, couponType, status string) (c
 		}
 	}
 
-	querySQL = utils.SetSQLFormat(`{0} ORDER BY c.id  DESC`, querySQL)
+	querySQL = utils.SetSQLFormat(`{0} ORDER BY c.coupon_id  DESC`, querySQL)
 
 	log.Println("querySQL:", querySQL)
 
