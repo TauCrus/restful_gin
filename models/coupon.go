@@ -241,7 +241,7 @@ func (c *Coupon) GetGpxjCoupons(keyword, couponID, couponType, status string) (c
 			c.exp_type,
 			c.exp_add_days ,
 			IFNULL(c.exp_end_date,""),
-			ROUND(c.discount * 10),
+			ROUND(c.discount * 10)
 		FROM stock_app.t_coupons c
 		WHERE 1
 	`)
