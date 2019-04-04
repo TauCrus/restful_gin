@@ -107,6 +107,8 @@ func initRouter() *gin.Engine {
 	// 优惠券路由
 	{
 		router.GET("/api/coupon/manage", GetCouponsAPI)
+		router.PUT("/api/coupon/status", ChangeCouponStatusAPI)
+
 		router.GET("/api/coupon/gpxj", GetGpxjCouponsAPI)
 
 		router.GET("/api/coupon/record", GetCouponRecordAPI)

@@ -4,6 +4,8 @@ import (
 	"log"
 	db "restful_gin/database"
 	"restful_gin/utils"
+
+	"github.com/golang/glog"
 )
 
 // Coupon 优惠券
@@ -97,6 +99,35 @@ func (c *Coupon) GetCoupons(keyword, couponID, couponType, status string) (cdLis
 	}
 
 	if err = rows.Err(); nil != err {
+		return
+	}
+
+	return
+}
+
+// ChangeCouponStatus 修改优惠券状态
+func (c *Coupon) ChangeCouponStatus(couponID int) (id int64, err error) {
+
+	updateSQL := utils.SetSQLFormat(`
+		UPDATE gpxj_app.t_coupons c
+		SET c.enable = IF(c.enable=1,0,1)
+		WHERE c.coupon_id = '{0}'
+	`, couponID)
+
+	glog.Info("updateSQL:", updateSQL)
+
+	stmt, err := db.SQLDB.Prepare(updateSQL)
+	if nil != err {
+		return
+	}
+
+	rs, err := stmt.Exec()
+	if nil != err {
+		return
+	}
+
+	id, err = rs.RowsAffected()
+	if nil != err {
 		return
 	}
 
